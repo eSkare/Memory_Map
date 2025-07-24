@@ -136,6 +136,13 @@ export function setupAuthUI(mapInstance) {
             authContainer.style.display = 'none';
             appContainer.style.display = 'block';
 
+            if (mapInstance) { // Ensure mapInstance was successfully passed and is valid
+                setTimeout(() => { // Use a small timeout to ensure DOM is rendered before resizing
+                    mapInstance.invalidateSize();
+                    console.log("[WORKAROUND] mapInstance.invalidateSize() called.");
+                }, 100); // A small delay (e.g., 100ms) can help ensure the CSS has been applied
+            }
+
             // --- WORKAROUND START: Display email as immediate fallback ---
             if (currentUserSpan) { // Ensure currentUserSpan exists before trying to update it
                  currentUserSpan.textContent = session.user.email || 'Logged In User'; // Fallback to email or generic text
