@@ -4,8 +4,239 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memory Map</title>
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <style>
+        /* Essential: Style for the map container */
+        #map {
+            height: 500px; 
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        /* --- Styles for the custom dialog --- */
+        .custom-div-icon {
+            background: none;
+            border: none;
+            position: relative;
+            text-align: center;
+        }
+
+        .marker-pin {
+            width: 30px;
+            height: 30px;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Optional: Inner icon (e.g., Font Awesome map-marker icon) */
+        .custom-div-icon i {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(45deg);
+            font-size: 16px;
+            color: white;
+            z-index: 1;
+        }
+
+
+        /* --- Styles for the custom dialog --- */
+        .custom-dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .custom-dialog-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-sizing: border-box;
+        }
+
+        .custom-dialog-content label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .custom-dialog-content input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+
+        /* Styles for the color toggles/radio buttons */
+        .color-options {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .color-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            border: 2px solid transparent;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .color-swatch {
+            position: relative; /* Needed for positioning the checkmark */
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid #ccc;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            display: flex; /* For centering the checkmark */
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* NEW: The checkmark circle */
+        .color-swatch::after {
+            content: ''; /* Required for pseudo-elements */
+            position: absolute;
+            width: 14px; /* Size of the circle */
+            height: 14px;
+            border-radius: 50%;
+            background-color: white; /* Color of the checkmark circle */
+            border: 1px solid #007bff; /* Border for the circle */
+            display: none; /* Hidden by default */
+            transition: opacity 0.2s ease;
+        }
+
+        .color-label span {
+            font-size: 0.8em;
+            margin-top: 5px;
+            color: #555;
+        }
+
+        /* Styles when a radio button is checked */
+        .color-option:checked + .color-label {
+            border-color: #007bff;
+            background-color: #e6f2ff;
+        }
+
+        .color-option:checked + .color-label .color-swatch {
+            border-color: #007bff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* NEW: Show the checkmark circle when the radio button is checked */
+        .color-option:checked + .color-label .color-swatch::after {
+            display: block; /* Make it visible */
+        }
+
+
+        /* Specific swatch colors (using direct background-color) */
+        .color-swatch.swatch-blue { background-color: #3498db; }
+        .color-swatch.swatch-red { background-color: #e74c3c; }
+        .color-swatch.swatch-green { background-color: #2ecc71; }
+        .color-swatch.swatch-yellow { background-color: #f1c40f; }
+        .color-swatch.swatch-purple { background-color: #9b59b6; }
+        .color-swatch.swatch-orange { background-color: #e67e22; }
+        .color-swatch.swatch-gray { background-color: #95a5a6; }
+
+
+        .custom-dialog-content .dialog-buttons button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s ease;
+        }
+
+        .custom-dialog-content .dialog-buttons button.ok-button {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .custom-dialog-content .dialog-buttons button.ok-button:hover {
+            background-color: #0056b3;
+        }
+
+        .custom-dialog-content .dialog-buttons button.cancel-button {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .custom-dialog-content .dialog-buttons button.cancel-button:hover {
+            background-color: #c82333;
+        }
+    </style>
 </head>
 <body>
-    <h1>Memory Map!</h1>
+    <h1>Memory Map! 🗺️</h1>
+    <p>A place to store your favorite locations📍</p>
+
+    <div id="map"></div>
+
+    <div id="markerDialogOverlay" class="custom-dialog-overlay">
+        <div class="custom-dialog-content">
+            <p id="dialogPromptText">Enter message and select color:</p>
+            <label for="markerMessageInput">Message:</label>
+            <input type="text" id="markerMessageInput" placeholder="My spot">
+
+            <label>Marker Color:</label>
+            <div class="color-options" id="colorOptionsContainer">
+                <span>Red</span>
+                </label>
+                -->
+            </div>
+
+            <div class="dialog-buttons">
+                <button class="ok-button" id="dialogOkButton">OK</button>
+                <button class="cancel-button" id="dialogCancelButton">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
+    
+    <script src="script.js"></script>
+
+    <p style="font-size: 6px;">yeet</p>
 </body>
 </html>
+<!-- "Supabase" for storing markers and users, for later -->

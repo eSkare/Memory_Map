@@ -8,3 +8,135 @@ body {
 h1 {
     color: #0056b3;
 }
+
+#map {
+    height: 500px; /* Or whatever height you prefer */
+    width: 100%;
+}
+
+
+
+/* Styles for the color toggles/radio buttons */
+.color-options {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.color-option {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.color-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 5px;
+    border: 2px solid transparent;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.color-swatch {
+    position: relative; /* IMPORTANT: Needed for positioning the ::after pseudo-element */
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    display: flex; /* For centering the checkmark */
+    justify-content: center;
+    align-items: center;
+}
+
+/* --- NEW: The checkmark circle styling --- */
+.color-swatch::after {
+    content: ''; /* Essential for pseudo-elements */
+    position: absolute;
+    width: 14px; /* Size of the inner circle */
+    height: 14px;
+    border-radius: 50%; /* Make it round */
+    background-color: white; /* Color of the checkmark circle */
+    border: 1px solid #007bff; /* Border for the circle */
+    display: none; /* Hidden by default */
+    opacity: 0; /* Start with 0 opacity for fade effect */
+    transition: opacity 0.2s ease, transform 0.2s ease; /* Smooth transition */
+    transform: scale(0.8); /* Start slightly smaller for pop effect */
+}
+
+.color-label span {
+    font-size: 0.8em;
+    margin-top: 5px;
+    color: #555;
+}
+
+/* Styles when a radio button is checked */
+.color-option:checked + .color-label { /* This is the key selector */
+    border-color: #007bff; /* Highlight border for selected color */
+    background-color: #e6f2ff; /* Light background for selected */
+}
+
+.color-option:checked + .color-label .color-swatch {
+    border-color: #007bff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.color-option:checked + .color-label .color-swatch::after {
+    display: block;
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* --- NEW, SIMPLIFIED STYLES FOR L.DIVICON CUSTOM MARKERS USING SVG --- */
+
+/* Main container for the SVG icon (this is the <div> Leaflet creates) */
+.custom-svg-icon {
+    background: none;
+    border: none;
+    position: relative;
+    width: 25px; /* Matches iconSize in L.divIcon */
+    height: 41px; /* Matches iconSize in L.divIcon */
+    overflow: visible; /* Ensure shadow and any overflows are visible */
+    /* REMOVED: box-shadow from here. It will be on the separate shadow-blob div now. */
+}
+
+/* NEW: Style for the separate shadow blob */
+.marker-shadow-blob {
+    position: absolute;
+    bottom: 0px; /* Position at the bottom of the icon */
+    left: 50%;
+    width: 20px; /* Width of the shadow ellipse */
+    height: 8px; /* Height of the shadow ellipse */
+    background-color: rgba(0, 0, 0, 0.4); /* Color of the shadow */
+    border-radius: 50%; /* Make it an ellipse */
+    transform: translateX(-50%) scaleY(0.7); /* Center and flatten slightly */
+    filter: blur(1.5px); /* Soften the edges of the shadow */
+    z-index: 0; /* Ensure it's behind the pin and icon */
+}
+
+/* Style for the SVG element itself (the pin shape) */
+.custom-svg-icon .marker-svg-shape {
+    display: block;
+    position: absolute;
+    top: 8px;   /* MODIFIED: Shift the SVG down by 2px within the 41px container */
+    left: 0;
+    z-index: 1;
+}
+
+
+/* Specific swatch colors (using direct background-color) */
+/* These match the colors in supportedMarkerColors in script.js */
+.color-swatch.swatch-blue { background-color: #3498db; }
+.color-swatch.swatch-red { background-color: #e74c3c; }
+.color-swatch.swatch-green { background-color: #2ecc71; }
+.color-swatch.swatch-yellow { background-color: #f1c40f; }
+.color-swatch.swatch-purple { background-color: #9b59b6; }
+.color-swatch.swatch-orange { background-color: #e67e22; }
+.color-swatch.swatch-gray { background-color: #95a5a6; }
