@@ -1,8 +1,6 @@
 // js/auth.js
 import { supabase } from '/Memory_Map/js/supabaseClient.js';
 import { loadMarkersForCurrentUser } from '/Memory_Map/js/map.js'; // Will need this to refresh map on auth change
-//import { loadCollectionsForCurrentUser } from '/Memory_Map/js/collections.js'; // Will need this to refresh collections
-
 import { clearCollectionsUI, resetCollectionSelection, loadCollectionsForCurrentUser } from '/Memory_Map/js/collections.js';
 
 // Get references to your new message display elements
@@ -83,12 +81,14 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
         e.preventDefault();
         loginForm.style.display = 'none';
         signupForm.style.display = 'block';
+        clearUIMessage(authMessageDisplay); // Clear message if user switches forms
     });
 
     showLoginBtn.addEventListener('click', (e) => {
         e.preventDefault();
         signupForm.style.display = 'none';
         loginForm.style.display = 'block';
+        clearUIMessage(authMessageDisplay); // Clear message if user switches forms
     });
 
     loginButton.addEventListener('click', async () => {
@@ -97,48 +97,44 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
             console.error('Login error:', error.message);
-            // alert(error.message); // OLD
-            displayUIMessage(error.message, 'error', authMessageDisplay, 0); // NEW
+            displayUIMessage(error.message, 'error', authMessageDisplay, 0); // Error persists
         } else {
-            // alert('Logged in successfully!'); // OLD
-            displayUIMessage('Logged in successfully!', 'success', authMessageDisplay, 3000); // NEW
-            clearUIMessage(authMessageDisplay); // Clear if you're transitioning away quickly
+            // Message will be handled by onAuthStateChange after successful login
+            // For immediate feedback *if* onAuthStateChange is slower,
+            // you could display a brief loading message here.
+            displayUIMessage('Logging in...', 'success', authMessageDisplay, 1000);
+            // clearUIMessage(authMessageDisplay); // REMOVE THIS LINE - let onAuthStateChange clear
         }
     });
 
-    // js/auth.js - Inside your signupButton.addEventListener
     signupButton.addEventListener('click', async () => {
         const email = signupEmailInput.value;
         const password = signupPasswordInput.value;
         const username = signupUsernameInput.value;
-    
+
         if (!username) {
-            alert('Please provide a username.');
+            displayUIMessage('Please provide a username.', 'warning', authMessageDisplay, 3000); // Use UI message
             return;
         }
-    
+        clearUIMessage(authMessageDisplay); // Clear any previous messages before attempting signup
         console.log('Attempting Supabase Auth signUp...');
         const { data: { user }, error: signUpError } = await supabase.auth.signUp({
             email,
             password,
-            // The 'username' here is stored in auth.users.user_metadata, which is accessible after login
             options: {
                 data: { username: username }
             }
         });
-    
-        if (signUpError) {
-                console.error('Supabase Auth signUp error:', signUpError.message);
-                // alert(signUpError.message); // OLD
-                displayUIMessage(signUpError.message, 'error', authMessageDisplay, 0); // NEW: Error persists until manually cleared or new action
-                return;
-            }
 
-        // alert('Sign up successful! Please check your email to confirm your account before logging in.'); // OLD
-        displayUIMessage('Sign up successful! Please check your email to confirm your account before logging in.', 'success', authMessageDisplay, 5000); // NEW: Success message, 5 seconds
+        if (signUpError) {
+            console.error('Supabase Auth signUp error:', signUpError.message);
+            displayUIMessage(signUpError.message, 'error', authMessageDisplay, 0); // Error persists
+            return;
+        }
+
+        displayUIMessage('Sign up successful! Please check your email to confirm your account before logging in.', 'success', authMessageDisplay, 5000);
         console.log('User signed up. Awaiting email confirmation.');
-        clearUIMessage(authMessageDisplay); // Clear message when switching views or after successful confirmation.
-        // Optionally, clear form fields here
+        // clearUIMessage(authMessageDisplay); // REMOVE THIS LINE - let the message fade
         signupEmailInput.value = '';
         signupPasswordInput.value = '';
         signupUsernameInput.value = '';
@@ -148,28 +144,33 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
         console.log('Logout button clicked!');
         const { error } = await supabase.auth.signOut();
         if (error) {
-            // alert(error.message); // OLD
-            displayUIMessage(error.message, 'error', appMessageDisplay, 0); // NEW: Use app-specific display for logout
+            displayUIMessage(error.message, 'error', appMessageDisplay, 0); // Error persists
             console.error('Logout error:', error.message);
         } else {
-            // alert('Logged out successfully!'); // OLD
-            displayUIMessage('Logged out successfully!', 'success', appMessageDisplay, 3000); // NEW
+            displayUIMessage('Logged out successfully!', 'success', appMessageDisplay, 3000);
             console.log('Logout successful!');
-            clearUIMessage(appMessageDisplay); // This will be handled by onAuthStateChange hiding the app view
+            // clearUIMessage(appMessageDisplay); // REMOVE THIS LINE - let the message fade
         }
     });
 
-    // js/auth.js - Inside your onAuthStateChange listener
-    // (Ensure you have mapInstance available here, passed from script.js)
     supabase.auth.onAuthStateChange(async (event, session) => {
         console.log('Auth state changed! Event:', event, 'Session:', session);
 
+        // This is crucial: Based on the event, decide what to clear.
+        // Don't clear *all* messages every time, as it might clear ones you just set.
+        if (event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) {
+            // If we are about to display the app UI, clear auth form messages.
+            clearUIMessage(authMessageDisplay);
+        } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+            // If we are about to display the auth UI, clear app messages.
+            clearUIMessage(appMessageDisplay);
+        }
+
         if (session) {
-            // User is logged in (or just confirmed email and became signed in)
+            console.log("Setting UI to logged-in state."); // For debugging
             authContainer.style.display = 'none';
             appContainer.style.display = 'block';
 
-            // --- IMPORTANT: Attempt to fetch profile. If it doesn't exist, create it. ---
             const { data: profile, error: profileFetchError } = await supabase
                 .from('profiles')
                 .select('username')
@@ -177,15 +178,15 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
                 .single();
 
             if (profile) {
-                // Profile found, display username
                 currentUserSpan.textContent = profile.username;
                 console.log("Profile found:", profile.username);
+                // Only display welcome message if it's a fresh sign-in or a page load where they were already signed in
+                if (event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) {
+                    displayUIMessage(`Welcome back, ${profile.username}!`, 'success', appMessageDisplay, 3000);
+                }
             } else if (profileFetchError && profileFetchError.message.includes('rows returned')) {
-                // Profile not found (0 rows returned by .single()) - Create it now!
                 console.warn("No profile found for user:", session.user.id, "Attempting to create one...");
 
-                // Get username from user_metadata (set during signup) or default to email prefix
-                // `session.user.user_metadata` contains the 'data' passed during signUp
                 const usernameToUse = session.user.user_metadata?.username || session.user.email.split('@')[0];
 
                 const { error: createProfileError } = await supabase
@@ -195,44 +196,43 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
                 if (createProfileError) {
                     console.error("Failed to create missing profile after sign-in:", createProfileError.message);
                     currentUserSpan.textContent = session.user.email || 'User (profile missing)';
-                    // Don't alert here unless it's a critical, unrecoverable error, as it might spam the user on refresh
-                    displayUIMessage("Your profile could not be created automatically. Please contact support.", 'error', appMessageDisplay, 0); // NEW
+                    displayUIMessage("Your profile could not be created automatically. Please contact support.", 'error', appMessageDisplay, 0);
                 } else {
                     console.log("Missing profile successfully created for user:", usernameToUse);
                     currentUserSpan.textContent = usernameToUse;
+                    displayUIMessage(`Profile created. Welcome, ${usernameToUse}!`, 'success', appMessageDisplay, 3000);
                 }
             } else {
-                // Other unexpected error fetching profile (e.g., network error, RLS for SELECT)
                 console.error("Unexpected error fetching profile:", profileFetchError?.message);
-                currentUserSpan.textContent = session.user.email || 'User (error fetching profile)'; // Fallback
+                currentUserSpan.textContent = session.user.email || 'User (error fetching profile)';
+                displayUIMessage(`Error fetching your profile: ${profileFetchError?.message}`, 'error', appMessageDisplay, 0);
             }
 
-            // Load markers and collections only once the user is logged in AND profile is handled
             loadMarkersForCurrentUser();
             loadCollectionsForCurrentUser();
 
-            clearUIMessage(authMessageDisplay); // Clear any old login/signup messages when app loads
-            clearUIMessage(appMessageDisplay); // Clear any old logout messages when logged in
-
         } else {
-            // User is logged out
-            console.log('User is logged out.');
+            console.log("Setting UI to guest state."); // For debugging
             authContainer.style.display = 'block';
             appContainer.style.display = 'none';
             currentUserSpan.textContent = 'Guest';
+
+            // Only display 'You are currently a guest.' if not coming from a successful logout.
+            // A successful logout should have its own message displayed by logoutButton listener.
+            if (event !== 'SIGNED_OUT') {
+                displayUIMessage('You are currently a guest.', 'warning', authMessageDisplay, 3000);
+            }
+
             // Clear map, markers, etc. for logged-out state
             if (mapInstance && mapInstance.eachLayer) {
                 mapInstance.eachLayer(function (layer) {
-                    if (layer._icon || layer._path) { // Check if it's a marker or polyline/polygon
+                    if (layer._icon || layer._path) {
                         mapInstance.removeLayer(layer);
                     }
                 });
             }
-            clearCollectionsUI(); // Assuming you have this function
-            resetCollectionSelection(); // Assuming you have this function
-
-            clearUIMessage(authMessageDisplay); // Clear any auth messages when logging out
-            clearUIMessage(appMessageDisplay); // Clear any app messages when logging out (e.g., "Logged out successfully")
+            clearCollectionsUI();
+            resetCollectionSelection();
         }
     });
 }
