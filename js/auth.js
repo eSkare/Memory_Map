@@ -180,50 +180,69 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
             currentUserSpan.textContent = 'Loading profile...';
             console.log("currentUserSpan set to 'Loading profile...'");
 
-            // Log the user ID we're about to query for debugging RLS issues
-            console.log("Attempting to fetch profile for user ID:", session.user.id);
-
-            const { data: profile, error: profileFetchError } = await supabase
-                .from('profiles')
-                .select('username')
-                .eq('id', session.user.id)
-                .single();
-
-            if (profile) {
-                console.log("Profile fetch successful. Profile data:", profile);
-                currentUserSpan.textContent = profile.username;
-                console.log(`currentUserSpan updated to: ${profile.username}`);
-
-                if (event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) {
-                    displayUIMessage(`Welcome back, ${profile.username}!`, 'success', appMessageDisplay, 3000);
+            // --- IMPORTANT: NEW TRY-CATCH BLOCK AROUND PROFILE FETCH ---
+            try {
+                // Verify Supabase client object is available before making the call
+                console.log("Supabase client object status:", supabase ? 'Available' : 'NOT AVAILABLE');
+                if (!supabase) {
+                    console.error("Supabase client is not initialized!");
+                    currentUserSpan.textContent = 'Error: Supabase not ready';
+                    displayUIMessage("An internal error occurred (Supabase client not initialized).", 'error', appMessageDisplay, 0);
+                    return; // Stop execution if supabase is not available
                 }
-            } else if (profileFetchError && profileFetchError.message.includes('rows returned')) {
-                // This means no profile was found for the user's ID
-                console.warn("PROFILE NOT FOUND: No profile found for user ID:", session.user.id, "Attempting to create one...");
-                
-                // Get username from user_metadata (set during signup) or default to email prefix
-                const usernameToUse = session.user.user_metadata?.username || (session.user.email ? session.user.email.split('@')[0] : 'UnknownUser');
-                console.log("Proposed username for new profile:", usernameToUse);
 
-                const { error: createProfileError } = await supabase
+                console.log("Attempting to fetch profile for user ID:", session.user.id);
+
+                const { data: profile, error: profileFetchError } = await supabase
                     .from('profiles')
-                    .insert({ id: session.user.id, username: usernameToUse });
+                    .select('username')
+                    .eq('id', session.user.id)
+                    .single();
 
-                if (createProfileError) {
-                    console.error("FAILED TO CREATE PROFILE:", createProfileError.message);
-                    currentUserSpan.textContent = session.user.email || 'User (profile missing, creation failed)';
-                    displayUIMessage("Your profile could not be created automatically. Please contact support.", 'error', appMessageDisplay, 0);
+                // These logs should now fire if the await resolves
+                if (profile) {
+                    console.log("PROFILE FETCH SUCCESS: Profile data received:", profile);
+                    currentUserSpan.textContent = profile.username;
+                    console.log(`currentUserSpan updated to: ${profile.username}`);
+
+                    if (event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) {
+                        displayUIMessage(`Welcome back, ${profile.username}!`, 'success', appMessageDisplay, 3000);
+                    }
+                } else if (profileFetchError && profileFetchError.message.includes('rows returned')) {
+                    // This means no profile was found for the user's ID
+                    console.warn("PROFILE NOT FOUND: No profile found for user ID:", session.user.id, "Attempting to create one...");
+
+                    // Get username from user_metadata (set during signup) or default to email prefix
+                    const usernameToUse = session.user.user_metadata?.username || (session.user.email ? session.user.email.split('@')[0] : 'UnknownUser');
+                    console.log("Proposed username for new profile:", usernameToUse);
+
+                    const { error: createProfileError } = await supabase
+                        .from('profiles')
+                        .insert({ id: session.user.id, username: usernameToUse });
+
+                    if (createProfileError) {
+                        console.error("FAILED TO CREATE PROFILE:", createProfileError.message);
+                        currentUserSpan.textContent = session.user.email || 'User (profile missing, creation failed)';
+                        displayUIMessage("Your profile could not be created automatically. Please contact support.", 'error', appMessageDisplay, 0);
+                    } else {
+                        console.log("Profile created successfully for user:", usernameToUse);
+                        currentUserSpan.textContent = usernameToUse;
+                        displayUIMessage(`Profile created. Welcome, ${usernameToUse}!`, 'success', appMessageDisplay, 3000);
+                    }
                 } else {
-                    console.log("Profile created successfully for user:", usernameToUse);
-                    currentUserSpan.textContent = usernameToUse;
-                    displayUIMessage(`Profile created. Welcome, ${usernameToUse}!`, 'success', appMessageDisplay, 3000);
+                    // This captures other types of errors, e.g., network issues, RLS blocking SELECT
+                    console.error("ERROR FETCHING PROFILE (Other reason):", profileFetchError?.message, "Full error object:", profileFetchError);
+                    currentUserSpan.textContent = session.user.email || 'User (error fetching profile)'; // Fallback if general error
+                    displayUIMessage(`Error fetching your profile: ${profileFetchError?.message}`, 'error', appMessageDisplay, 0);
                 }
-            } else {
-                // This captures other types of errors, e.g., network issues, RLS blocking SELECT
-                console.error("ERROR FETCHING PROFILE (Other reason):", profileFetchError?.message);
-                currentUserSpan.textContent = session.user.email || 'User (error fetching profile)'; // Fallback if general error
-                displayUIMessage(`Error fetching your profile: ${profileFetchError?.message}`, 'error', appMessageDisplay, 0);
+            } catch (e) {
+                // This will catch any JavaScript errors that occur synchronously
+                // or during the await promise resolution (e.g., TypeError, network error that throws)
+                console.error("UNCAUGHT ERROR DURING PROFILE FETCH BLOCK:", e);
+                currentUserSpan.textContent = session.user.email || 'User (profile fetch failed)';
+                displayUIMessage(`An unexpected error occurred during profile fetch: ${e.message}`, 'error', appMessageDisplay, 0);
             }
+            // --- END NEW TRY-CATCH BLOCK ---
 
             // Load markers and collections only once the user is logged in AND profile is handled
             loadMarkersForCurrentUser();
