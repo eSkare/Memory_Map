@@ -46,6 +46,7 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
         }
     });
 
+    // js/auth.js - Inside your signupButton.addEventListener
     signupButton.addEventListener('click', async () => {
         const email = signupEmailInput.value;
         const password = signupPasswordInput.value;
@@ -56,6 +57,7 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
             return;
         }
 
+        console.log('Attempting Supabase Auth signUp...');
         const { data: { user }, error: signUpError } = await supabase.auth.signUp({
             email,
             password,
@@ -65,23 +67,31 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
         });
 
         if (signUpError) {
+            console.error('Supabase Auth signUp error:', signUpError.message);
             alert(signUpError.message);
             return;
         }
 
         if (user) {
+            console.log('Supabase Auth signUp successful. User ID:', user.id, 'Email:', user.email);
+            console.log('Now attempting to create profile in public.profiles...');
+
             const { error: profileError } = await supabase
                 .from('profiles')
-                .insert({ id: user.id, username: username });
+                .insert({ id: user.id, username: username }); // user.id comes from Supabase Auth
 
             if (profileError) {
-                console.error('Error creating user profile:', profileError.message);
+                console.error('Error creating user profile in public.profiles:', profileError.message);
+                // This is the alert you're seeing:
                 alert('Sign up successful, but failed to create user profile. Please try logging in.');
             } else {
+                console.log('Profile successfully created in public.profiles for user:', user.id);
                 alert('Signed up and logged in successfully! Welcome, ' + username + '!');
             }
         } else {
-            alert('Please check your email to confirm your account.');
+            // This case usually means email confirmation is required and no session is immediately created
+            console.log('User signed up, but session not created immediately (likely email confirmation pending).');
+            alert('Please check your email to confirm your account before logging in.');
         }
     });
 
