@@ -4,7 +4,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_ZQcsxoa1HmByAK0nBLT-iA_Bzs0xgwd'; // R
 
 // Initialize Supabase client directly at the top of the script.
 // Because script.js will now be 'deferred', it runs AFTER the Supabase CDN script has loaded.
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 
 // Wrap all your main logic that interacts with the DOM inside a DOMContentLoaded listener.
