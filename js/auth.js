@@ -199,6 +199,9 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
                     .eq('id', session.user.id)
                     .single();
 
+                // *** NEW LOG HERE - IMMEDIATELY AFTER AWAIT ***
+                console.log("Profile fetch await resolved. Profile:", profile, "Error:", profileFetchError);
+
                 // These logs should now fire if the await resolves
                 if (profile) {
                     console.log("PROFILE FETCH SUCCESS: Profile data received:", profile);
