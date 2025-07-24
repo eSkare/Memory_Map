@@ -86,11 +86,14 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
     });
 
     logoutButton.addEventListener('click', async () => {
+        console.log('Logout button clicked!'); // ADD THIS LINE
         const { error } = await supabase.auth.signOut();
         if (error) {
             alert(error.message);
+            console.error('Logout error:', error.message); // ADD THIS LINE
         } else {
             alert('Logged out successfully!');
+            console.log('Logout successful!'); // ADD THIS LINE
         }
     });
 
