@@ -1,13 +1,14 @@
 // At the very top of your script.js
 const SUPABASE_URL = 'https://szcotkwupwrbawgprkbk.supabase.co'; // Replace with your Project URL
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6Y290a3d1cHdyYmF3Z3Bya2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzNTEyNDcsImV4cCI6MjA2ODkyNzI0N30.e-cQbi9lt803sGD-SUItopcE6WgmYcxLFgPsGFp32zI'; // Replace with your anon key
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6Y290a3d1cHdyYmF3Z3Bya2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzNTEyNDcsImV4cCI6MjA2ODkyNzI0N30.e-cQbi9lt803sGD-SUItopcE6WgmYcxLFp32zI'; // Replace with your anon key
 
-// THIS MUST BE OUTSIDE THE DOMContentLoaded LISTENER
-// Because the Supabase object is provided by the CDN script that runs BEFORE this script.
+// Initialize Supabase client directly at the top of the script.
+// Because script.js will now be 'deferred', it runs AFTER the Supabase CDN script has loaded.
 const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 
-// Wrap all your main logic inside a DOMContentLoaded listener
+// Wrap all your main logic that interacts with the DOM inside a DOMContentLoaded listener.
+// This is still good practice to ensure all HTML elements are ready before you try to access them.
 document.addEventListener('DOMContentLoaded', async () => {
     // Define the latitude and longitude for Bergen, Norway (your initial view)
     const bergenLat = 60.39;
@@ -161,8 +162,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // ... (Supabase initialization and existing map/marker code) ...
-
     // --- Auth UI Elements ---
     const authContainer = document.getElementById('auth-container');
     const appContainer = document.getElementById('app-container');
@@ -184,6 +183,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const logoutButton = document.getElementById('logout-button');
 
     // --- Collection UI Elements (within dialog) ---
+    // Note: Re-declared here, ensure your HTML structure makes them accessible
     const collectionOptionsContainer = document.getElementById('collectionOptionsContainer');
     const collectionsList = document.getElementById('collectionsList');
     const newCollectionInput = document.getElementById('newCollectionInput');
@@ -247,8 +247,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (profileError) {
                 console.error('Error creating user profile:', profileError.message);
                 alert('Sign up successful, but failed to create user profile. Please try logging in.');
-                // You might want to delete the auth user here if profile creation is critical
-                // await supabase.auth.signOut(); // Consider if you want to force sign out here
             } else {
                 alert('Signed up and logged in successfully! Welcome, ' + username + '!');
             }
@@ -349,7 +347,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const newMarker = L.marker([markerData.latitude, markerData.longitude], { icon: newMarkerIcon }).addTo(map);
 
             let popupContent = `<b>${markerData.name}</b><br>
-                                Created: ${new Date(markerData.created_at).toLocaleDateString()}`;
+                                 Created: ${new Date(markerData.created_at).toLocaleDateString()}`;
 
             if (markerData.marker_collections && markerData.marker_collections.length > 0) {
                 const collectionNames = markerData.marker_collections
@@ -357,7 +355,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     .join(', ');
                 popupContent += `<br>Collections: ${collectionNames}`;
             }
-            newMarker.bindPopup(popupContent).openPopup();
+            newMarker.bindPopup(popupContent); // Remove .openPopup() unless you want all to open on load
         });
     }
 
@@ -506,8 +504,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (session) {
         // The onAuthStateChange listener has already been set up above.
         // It will trigger the correct UI state automatically if a session exists.
-        // You can directly call the logic from the onAuthStateChange listener here if needed,
-        // but often the listener itself is enough as it's designed to react to initial session too.
         // For simplicity, just ensure the UI is in the correct state initially.
         authContainer.style.display = 'none';
         appContainer.style.display = 'block';
