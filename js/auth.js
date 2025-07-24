@@ -51,48 +51,36 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
         const email = signupEmailInput.value;
         const password = signupPasswordInput.value;
         const username = signupUsernameInput.value;
-
+    
         if (!username) {
             alert('Please provide a username.');
             return;
         }
-
+    
         console.log('Attempting Supabase Auth signUp...');
         const { data: { user }, error: signUpError } = await supabase.auth.signUp({
             email,
             password,
+            // The 'username' here is stored in auth.users.user_metadata, which is accessible after login
             options: {
                 data: { username: username }
             }
         });
-
+    
         if (signUpError) {
             console.error('Supabase Auth signUp error:', signUpError.message);
             alert(signUpError.message);
             return;
         }
-
-        if (user) {
-            console.log('Supabase Auth signUp successful. User ID:', user.id, 'Email:', user.email);
-            console.log('Now attempting to create profile in public.profiles...');
-
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .insert({ id: user.id, username: username }); // user.id comes from Supabase Auth
-
-            if (profileError) {
-                console.error('Error creating user profile in public.profiles:', profileError.message);
-                // This is the alert you're seeing:
-                alert('Sign up successful, but failed to create user profile. Please try logging in.');
-            } else {
-                console.log('Profile successfully created in public.profiles for user:', user.id);
-                alert('Signed up and logged in successfully! Welcome, ' + username + '!');
-            }
-        } else {
-            // This case usually means email confirmation is required and no session is immediately created
-            console.log('User signed up, but session not created immediately (likely email confirmation pending).');
-            alert('Please check your email to confirm your account before logging in.');
-        }
+    
+    
+        // Now, always alert the user to check their email after successful signup call
+        alert('Sign up successful! Please check your email to confirm your account before logging in.');
+        console.log('User signed up. Awaiting email confirmation.');
+        // Optionally, clear form fields here
+        signupEmailInput.value = '';
+        signupPasswordInput.value = '';
+        signupUsernameInput.value = '';
     });
 
     logoutButton.addEventListener('click', async () => {
@@ -107,37 +95,73 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
         }
     });
 
+    // js/auth.js - Inside your onAuthStateChange listener
+    // (Ensure you have mapInstance available here, passed from script.js)
     supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('Auth state changed! Event:', event, 'Session:', session);
+
         if (session) {
+            // User is logged in (or just confirmed email and became signed in)
             authContainer.style.display = 'none';
             appContainer.style.display = 'block';
-            const { data: profile, error } = await supabase
+
+            // --- IMPORTANT: Attempt to fetch profile. If it doesn't exist, create it. ---
+            const { data: profile, error: profileFetchError } = await supabase
                 .from('profiles')
                 .select('username')
                 .eq('id', session.user.id)
                 .single();
 
             if (profile) {
+                // Profile found, display username
                 currentUserSpan.textContent = profile.username;
+                console.log("Profile found:", profile.username);
+            } else if (profileFetchError && profileFetchError.message.includes('rows returned')) {
+                // Profile not found (0 rows returned by .single()) - Create it now!
+                console.warn("No profile found for user:", session.user.id, "Attempting to create one...");
+
+                // Get username from user_metadata (set during signup) or default to email prefix
+                // `session.user.user_metadata` contains the 'data' passed during signUp
+                const usernameToUse = session.user.user_metadata?.username || session.user.email.split('@')[0];
+
+                const { error: createProfileError } = await supabase
+                    .from('profiles')
+                    .insert({ id: session.user.id, username: usernameToUse });
+
+                if (createProfileError) {
+                    console.error("Failed to create missing profile after sign-in:", createProfileError.message);
+                    currentUserSpan.textContent = session.user.email || 'User (profile missing)';
+                    // Don't alert here unless it's a critical, unrecoverable error, as it might spam the user on refresh
+                } else {
+                    console.log("Missing profile successfully created for user:", usernameToUse);
+                    currentUserSpan.textContent = usernameToUse;
+                }
             } else {
-                currentUserSpan.textContent = session.user.email || 'User';
-                console.error("Error fetching profile:", error?.message);
+                // Other unexpected error fetching profile (e.g., network error, RLS for SELECT)
+                console.error("Unexpected error fetching profile:", profileFetchError?.message);
+                currentUserSpan.textContent = session.user.email || 'User (error fetching profile)'; // Fallback
             }
+
+            // Load markers and collections only once the user is logged in AND profile is handled
             loadMarkersForCurrentUser();
             loadCollectionsForCurrentUser();
+
         } else {
+            // User is logged out
+            console.log('User is logged out.');
             authContainer.style.display = 'block';
             appContainer.style.display = 'none';
-            loginForm.style.display = 'block';
-            signupForm.style.display = 'none';
-            if (mapInstance) { // Clear markers only if map instance is provided
-                mapInstance.eachLayer(function(layer) {
-                    if (layer instanceof L.Marker) {
+            currentUserSpan.textContent = 'Guest';
+            // Clear map, markers, etc. for logged-out state
+            if (mapInstance && mapInstance.eachLayer) {
+                mapInstance.eachLayer(function (layer) {
+                    if (layer._icon || layer._path) { // Check if it's a marker or polyline/polygon
                         mapInstance.removeLayer(layer);
                     }
                 });
             }
-            currentUserSpan.textContent = 'Guest';
+            clearCollectionsUI(); // Assuming you have this function
+            resetCollectionSelection(); // Assuming you have this function
         }
     });
 }
