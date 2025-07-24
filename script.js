@@ -1,7 +1,7 @@
 // script.js (your main entry point)
-import { initMap, loadMarkersForCurrentUser } from './js/map.js';
-import { setupAuthUI } from './js/auth.js';
-import { setupCollectionListeners, loadCollectionsForCurrentUser } from './js/collections.js';
+import { initMap, loadMarkersForCurrentUser } from 'Memory_Map/js/map.js';
+import { setupAuthUI } from 'Memory_Map/js/auth.js';
+import { setupCollectionListeners, loadCollectionsForCurrentUser } from 'Memory_Map/js/collections.js';
 // No direct import of dialog.js needed here, map.js imports it.
 
 document.addEventListener('DOMContentLoaded', async () => {
