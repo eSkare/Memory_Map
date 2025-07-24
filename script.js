@@ -1,10 +1,13 @@
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+
 // At the very top of your script.js
 const SUPABASE_URL = 'https://szcotkwupwrbawgprkbk.supabase.co'; // Replace with your Project URL
 const SUPABASE_ANON_KEY = 'sb_publishable_ZQcsxoa1HmByAK0nBLT-iA_Bzs0xgwd'; // Replace with your anon key
 
 // Initialize Supabase client directly at the top of the script.
 // Because script.js will now be 'deferred', it runs AFTER the Supabase CDN script has loaded.
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 
 // Wrap all your main logic that interacts with the DOM inside a DOMContentLoaded listener.
