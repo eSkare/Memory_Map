@@ -1,11 +1,11 @@
 // js/auth.js
 import { supabase } from '/Memory_Map/js/supabaseClient.js';
-import { loadMarkersForCurrentUser } from '/Memory_Map/js/map.js'; // Will need this to refresh map on auth change
+import { loadMarkersForCurrentUser } from '/Memory_Map/js/map.js';
 import { clearCollectionsUI, resetCollectionSelection, loadCollectionsForCurrentUser } from '/Memory_Map/js/collections.js';
 
 // Get references to your new message display elements
 const authMessageDisplay = document.getElementById('message-display');
-const appMessageDisplay = document.getElementById('app-message-display'); // If you chose to use two
+const appMessageDisplay = document.getElementById('app-message-display');
 
 /**
  * Displays a message in the UI for a set duration.
@@ -76,19 +76,133 @@ const signupButton = document.getElementById('signup-button');
 const currentUserSpan = document.getElementById('current-username');
 const logoutButton = document.getElementById('logout-button');
 
-export function setupAuthUI(mapInstance) { // Pass map instance if needed for clearing markers
+// --- NEW: Centralized function to handle logged-in UI and profile fetching ---
+async function handleProfileAndUI(session, event = 'UNKNOWN_EVENT') {
+    console.log(`[handleProfileAndUI] Triggered by: ${event}. Session present:`, !!session);
+
+    // Initial UI state setup for logged-in
+    authContainer.style.display = 'none';
+    appContainer.style.display = 'block';
+    currentUserSpan.textContent = 'Loading profile...';
+    console.log("currentUserSpan set to 'Loading profile...' (step 1)");
+
+    try {
+        console.log("[handleProfileAndUI] Supabase client object status:", supabase ? 'Available' : 'NOT AVAILABLE');
+        if (!supabase) {
+            console.error("[handleProfileAndUI] Supabase client is not initialized!");
+            currentUserSpan.textContent = 'Error: Supabase not ready';
+            displayUIMessage("An internal error occurred (Supabase client not initialized).", 'error', appMessageDisplay, 0);
+            return;
+        }
+
+        console.log("[handleProfileAndUI] Attempting to fetch profile for user ID:", session.user.id + " (step 2)");
+
+        const { data: profile, error: profileFetchError } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', session.user.id)
+            .single();
+
+        console.log("[handleProfileAndUI] Profile fetch await resolved. Profile:", profile, "Error:", profileFetchError + " (step 3)");
+
+        // --- AGGRESSIVE VISUAL CONFIRMATION (Keep for now) ---
+        // This will try to display even if other console logs are suppressed
+        if (profile && profile.username) {
+            currentUserSpan.textContent = "DEBUG: Profile Loaded: " + profile.username;
+            displayUIMessage("DEBUG: Profile loaded: " + profile.username, 'success', appMessageDisplay, 5000);
+            alert("DEBUG: Profile Loaded: " + profile.username + " (Check console for other logs)");
+        } else {
+            currentUserSpan.textContent = "DEBUG: Profile Not Loaded (Check console for errors)";
+            displayUIMessage("DEBUG: Profile NOT loaded: " + (profileFetchError?.message || "unknown error"), 'error', appMessageDisplay, 5000);
+            alert("DEBUG: Profile NOT Loaded! Error: " + (profileFetchError?.message || "none") + " (Check console)");
+        }
+        // --- END AGGRESSIVE VISUAL CONFIRMATION ---
+
+
+        if (profile) {
+            console.log("[handleProfileAndUI] PROFILE FETCH SUCCESS: Profile data received:", profile + " (step 4)");
+            currentUserSpan.textContent = profile.username; // This will overwrite the DEBUG text
+            console.log(`[handleProfileAndUI] currentUserSpan updated to: ${profile.username} (step 5)`);
+
+            // Only show welcome message for actual sign-in or initial load
+            if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION_ON_LOAD') { // Using specific event for DOMContentLoaded
+                displayUIMessage(`Welcome back, ${profile.username}!`, 'success', appMessageDisplay, 3000);
+            }
+        } else if (profileFetchError && profileFetchError.message.includes('rows returned')) {
+            console.warn("[handleProfileAndUI] PROFILE NOT FOUND: No profile found for user ID:", session.user.id, "Attempting to create one... (step 4b)");
+
+            const usernameToUse = session.user.user_metadata?.username || (session.user.email ? session.user.email.split('@')[0] : 'UnknownUser');
+            console.log("[handleProfileAndUI] Proposed username for new profile:", usernameToUse);
+
+            const { error: createProfileError } = await supabase
+                .from('profiles')
+                .insert({ id: session.user.id, username: usernameToUse });
+
+            if (createProfileError) {
+                console.error("[handleProfileAndUI] FAILED TO CREATE PROFILE:", createProfileError.message + " (step 5b)");
+                currentUserSpan.textContent = session.user.email || 'User (profile missing, creation failed)';
+                displayUIMessage("Your profile could not be created automatically. Please contact support.", 'error', appMessageDisplay, 0);
+            } else {
+                console.log("[handleProfileAndUI] Profile created successfully for user:", usernameToUse + " (step 5c)");
+                currentUserSpan.textContent = usernameToUse;
+                displayUIMessage(`Profile created. Welcome, ${usernameToUse}!`, 'success', appMessageDisplay, 3000);
+            }
+        } else {
+            console.error("[handleProfileAndUI] ERROR FETCHING PROFILE (Other reason):", profileFetchError?.message, "Full error object:", profileFetchError + " (step 4c)");
+            currentUserSpan.textContent = session.user.email || 'User (error fetching profile)';
+            displayUIMessage(`Error fetching your profile: ${profileFetchError?.message}`, 'error', appMessageDisplay, 0);
+        }
+    } catch (e) {
+        console.error("[handleProfileAndUI] UNCAUGHT ERROR DURING PROFILE FETCH BLOCK:", e + " (step UNCAUGHT)");
+        currentUserSpan.textContent = session.user.email || 'User (profile fetch failed)';
+        displayUIMessage(`An unexpected error occurred during profile fetch: ${e.message}`, 'error', appMessageDisplay, 0);
+    }
+
+    // Load markers and collections only once the user is logged in AND profile is handled
+    loadMarkersForCurrentUser();
+    loadCollectionsForCurrentUser();
+
+    console.log("[handleProfileAndUI] End of logged-in state logic (step FINAL)");
+}
+
+// --- NEW: Centralized function to handle logged-out UI ---
+function handleLoggedOutUI(mapInstance, event = 'UNKNOWN_EVENT') {
+    console.log(`[handleLoggedOutUI] Triggered by: ${event}.`);
+    authContainer.style.display = 'block';
+    appContainer.style.display = 'none';
+    currentUserSpan.textContent = 'Guest';
+
+    if (event !== 'SIGNED_OUT') { // Only display guest message if not coming from an explicit sign out
+        displayUIMessage('You are currently a guest.', 'warning', authMessageDisplay, 3000);
+    }
+
+    if (mapInstance && mapInstance.eachLayer) {
+        mapInstance.eachLayer(function (layer) {
+            if (layer._icon || layer._path) {
+                mapInstance.removeLayer(layer);
+            }
+        });
+    }
+    clearCollectionsUI();
+    resetCollectionSelection();
+    console.log("[handleLoggedOutUI] Completed logged-out state logic.");
+}
+
+
+export function setupAuthUI(mapInstance) {
+    // --- Existing event listeners for login/signup/logout forms ---
     showSignupBtn.addEventListener('click', (e) => {
         e.preventDefault();
         loginForm.style.display = 'none';
         signupForm.style.display = 'block';
-        clearUIMessage(authMessageDisplay); // Clear message if user switches forms
+        clearUIMessage(authMessageDisplay);
     });
 
     showLoginBtn.addEventListener('click', (e) => {
         e.preventDefault();
         signupForm.style.display = 'none';
         loginForm.style.display = 'block';
-        clearUIMessage(authMessageDisplay); // Clear message if user switches forms
+        clearUIMessage(authMessageDisplay);
     });
 
     loginButton.addEventListener('click', async () => {
@@ -97,13 +211,9 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
             console.error('Login error:', error.message);
-            displayUIMessage(error.message, 'error', authMessageDisplay, 0); // Error persists
+            displayUIMessage(error.message, 'error', authMessageDisplay, 0);
         } else {
-            // Message will be handled by onAuthStateChange after successful login
-            // For immediate feedback *if* onAuthStateChange is slower,
-            // you could display a brief loading message here.
             displayUIMessage('Logging in...', 'success', authMessageDisplay, 1000);
-            // clearUIMessage(authMessageDisplay); // REMOVE THIS LINE - let onAuthStateChange clear
         }
     });
 
@@ -113,10 +223,10 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
         const username = signupUsernameInput.value;
 
         if (!username) {
-            displayUIMessage('Please provide a username.', 'warning', authMessageDisplay, 3000); // Use UI message
+            displayUIMessage('Please provide a username.', 'warning', authMessageDisplay, 3000);
             return;
         }
-        clearUIMessage(authMessageDisplay); // Clear any previous messages before attempting signup
+        clearUIMessage(authMessageDisplay);
         console.log('Attempting Supabase Auth signUp...');
         const { data: { user }, error: signUpError } = await supabase.auth.signUp({
             email,
@@ -128,13 +238,12 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
 
         if (signUpError) {
             console.error('Supabase Auth signUp error:', signUpError.message);
-            displayUIMessage(signUpError.message, 'error', authMessageDisplay, 0); // Error persists
+            displayUIMessage(signUpError.message, 'error', authMessageDisplay, 0);
             return;
         }
 
         displayUIMessage('Sign up successful! Please check your email to confirm your account before logging in.', 'success', authMessageDisplay, 5000);
         console.log('User signed up. Awaiting email confirmation.');
-        // clearUIMessage(authMessageDisplay); // REMOVE THIS LINE - let the message fade
         signupEmailInput.value = '';
         signupPasswordInput.value = '';
         signupUsernameInput.value = '';
@@ -144,135 +253,61 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
         console.log('Logout button clicked!');
         const { error } = await supabase.auth.signOut();
         if (error) {
-            displayUIMessage(error.message, 'error', appMessageDisplay, 0); // Error persists
+            displayUIMessage(error.message, 'error', appMessageDisplay, 0);
             console.error('Logout error:', error.message);
         } else {
             displayUIMessage('Logged out successfully!', 'success', appMessageDisplay, 3000);
             console.log('Logout successful!');
-            // clearUIMessage(appMessageDisplay); // REMOVE THIS LINE - let the message fade
         }
     });
 
-    supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log('Auth state changed! Event:', event, 'Session:', session ? 'Session Object Present' : 'Session is null'); // More concise Session log
+    // --- NEW: Check session immediately on page load once DOM is ready ---
+    document.addEventListener('DOMContentLoaded', async () => {
+        console.log("[DOMContentLoaded] Page loaded. Checking initial session...");
+        const { data: { session }, error: getSessionError } = await supabase.auth.getSession();
 
-        if (session) {
-            console.log("--- Full Session Object Contents (Start) ---");
-            console.log("Session object:", session);
-            console.log("Session user object:", session.user);
-            console.log("Session user ID (direct access):", session.user ? session.user.id : 'User ID not found');
-            console.log("--- Full Session Object Contents (End) ---");
+        if (getSessionError) {
+            console.error("[DOMContentLoaded] Error getting initial session:", getSessionError.message);
+            handleLoggedOutUI(mapInstance, 'GET_SESSION_ERROR');
+            return;
         }
 
-        // Conditional clearing of messages based on state transition
+        if (session) {
+            console.log("[DOMContentLoaded] Initial session found. Handling profile and UI.");
+            await handleProfileAndUI(session, 'INITIAL_SESSION_ON_LOAD'); // Pass a specific event type
+        } else {
+            console.log("[DOMContentLoaded] No initial session found. Handling logged-out UI.");
+            handleLoggedOutUI(mapInstance, 'NO_INITIAL_SESSION');
+        }
+    });
+
+
+    // --- Existing onAuthStateChange listener ---
+    // This will now primarily handle SIGNED_IN (after login), SIGNED_OUT, USER_UPDATED, etc.
+    // The INITIAL_SESSION on page load is now handled by the DOMContentLoaded block above.
+    supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log(`[onAuthStateChange] Auth state changed! Event: ${event}. Session: ${session ? 'Object Present' : 'Null'}`);
+
+        // Clear UI messages based on state transition
         if (event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) {
             clearUIMessage(authMessageDisplay);
         } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
             clearUIMessage(appMessageDisplay);
         }
 
-        if (session) {
-            console.log("Entering logged-in state logic.");
-            authContainer.style.display = 'none';
-            appContainer.style.display = 'block';
-
-            // Set a temporary loading state for the username BEFORE fetching the profile
-            currentUserSpan.textContent = 'Loading profile...';
-            console.log("currentUserSpan set to 'Loading profile...'");
-
-            // --- IMPORTANT: NEW TRY-CATCH BLOCK AROUND PROFILE FETCH ---
-            try {
-                // Verify Supabase client object is available before making the call
-                console.log("Supabase client object status:", supabase ? 'Available' : 'NOT AVAILABLE');
-                if (!supabase) {
-                    console.error("Supabase client is not initialized!");
-                    currentUserSpan.textContent = 'Error: Supabase not ready';
-                    displayUIMessage("An internal error occurred (Supabase client not initialized).", 'error', appMessageDisplay, 0);
-                    return; // Stop execution if supabase is not available
-                }
-
-                console.log("Attempting to fetch profile for user ID:", session.user.id);
-
-                const { data: profile, error: profileFetchError } = await supabase
-                    .from('profiles')
-                    .select('username')
-                    .eq('id', session.user.id)
-                    .single();
-
-                // *** NEW LOG HERE - IMMEDIATELY AFTER AWAIT ***
-                console.log("Profile fetch await resolved. Profile:", profile, "Error:", profileFetchError);
-
-                // These logs should now fire if the await resolves
-                if (profile) {
-                    console.log("PROFILE FETCH SUCCESS: Profile data received:", profile);
-                    currentUserSpan.textContent = profile.username;
-                    console.log(`currentUserSpan updated to: ${profile.username}`);
-
-                    if (event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) {
-                        displayUIMessage(`Welcome back, ${profile.username}!`, 'success', appMessageDisplay, 3000);
-                    }
-                } else if (profileFetchError && profileFetchError.message.includes('rows returned')) {
-                    // This means no profile was found for the user's ID
-                    console.warn("PROFILE NOT FOUND: No profile found for user ID:", session.user.id, "Attempting to create one...");
-
-                    // Get username from user_metadata (set during signup) or default to email prefix
-                    const usernameToUse = session.user.user_metadata?.username || (session.user.email ? session.user.email.split('@')[0] : 'UnknownUser');
-                    console.log("Proposed username for new profile:", usernameToUse);
-
-                    const { error: createProfileError } = await supabase
-                        .from('profiles')
-                        .insert({ id: session.user.id, username: usernameToUse });
-
-                    if (createProfileError) {
-                        console.error("FAILED TO CREATE PROFILE:", createProfileError.message);
-                        currentUserSpan.textContent = session.user.email || 'User (profile missing, creation failed)';
-                        displayUIMessage("Your profile could not be created automatically. Please contact support.", 'error', appMessageDisplay, 0);
-                    } else {
-                        console.log("Profile created successfully for user:", usernameToUse);
-                        currentUserSpan.textContent = usernameToUse;
-                        displayUIMessage(`Profile created. Welcome, ${usernameToUse}!`, 'success', appMessageDisplay, 3000);
-                    }
-                } else {
-                    // This captures other types of errors, e.g., network issues, RLS blocking SELECT
-                    console.error("ERROR FETCHING PROFILE (Other reason):", profileFetchError?.message, "Full error object:", profileFetchError);
-                    currentUserSpan.textContent = session.user.email || 'User (error fetching profile)'; // Fallback if general error
-                    displayUIMessage(`Error fetching your profile: ${profileFetchError?.message}`, 'error', appMessageDisplay, 0);
-                }
-            } catch (e) {
-                // This will catch any JavaScript errors that occur synchronously
-                // or during the await promise resolution (e.g., TypeError, network error that throws)
-                console.error("UNCAUGHT ERROR DURING PROFILE FETCH BLOCK:", e);
-                currentUserSpan.textContent = session.user.email || 'User (profile fetch failed)';
-                displayUIMessage(`An unexpected error occurred during profile fetch: ${e.message}`, 'error', appMessageDisplay, 0);
-            }
-            // --- END NEW TRY-CATCH BLOCK ---
-
-            // Load markers and collections only once the user is logged in AND profile is handled
-            loadMarkersForCurrentUser();
-            loadCollectionsForCurrentUser();
-
-        } else {
-            // User is logged out
-            console.log('Entering logged-out state logic.');
-            authContainer.style.display = 'block';
-            appContainer.style.display = 'none';
-            currentUserSpan.textContent = 'Guest'; // ONLY place to set 'Guest' when genuinely logged out
-
-            // Only display 'You are currently a guest.' if not coming from a successful logout.
-            if (event !== 'SIGNED_OUT') {
-                displayUIMessage('You are currently a guest.', 'warning', authMessageDisplay, 3000);
-            }
-
-            // Clear map, markers, etc. for logged-out state
-            if (mapInstance && mapInstance.eachLayer) {
-                mapInstance.eachLayer(function (layer) {
-                    if (layer._icon || layer._path) { // Check if it's a marker or polyline/polygon
-                        mapInstance.removeLayer(layer);
-                    }
-                });
-            }
-            clearCollectionsUI();
-            resetCollectionSelection();
+        if (event === 'SIGNED_IN') {
+             // If SIGNED_IN from a fresh login (not INITIAL_SESSION on page load), handle it.
+             console.log(`[onAuthStateChange] Handling SIGNED_IN event...`);
+             await handleProfileAndUI(session, event);
+        } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+            console.log(`[onAuthStateChange] Handling ${event} event...`);
+            handleLoggedOutUI(mapInstance, event);
+        } else if (event === 'INITIAL_SESSION' && !session) {
+            // This case handles INITIAL_SESSION where no session is found (e.g., first visit, cleared cache)
+            console.log(`[onAuthStateChange] Handling INITIAL_SESSION with no session (user is guest).`);
+            handleLoggedOutUI(mapInstance, event);
         }
+        // For other events like USER_UPDATED,PASSWORD_RECOVERY, etc., you might want to call handleProfileAndUI(session, event)
+        // or specific handlers if needed.
     });
 }
