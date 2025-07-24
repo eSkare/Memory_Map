@@ -214,6 +214,7 @@
     <p>A place to store your favorite locations📍</p>
 
 
+    <!-- Authentication Forms (visible when logged out) -->
     <div id="auth-container">
         <div id="login-form" class="auth-section">
             <h2>Login</h2>
@@ -233,51 +234,54 @@
         </div>
     </div>
 
+    <!-- Main Application Container (visible when logged in) -->
     <div id="app-container" style="display: none;">
         <div id="user-info">
             Welcome, <span id="current-username">Guest</span>!
             <button id="logout-button">Logout</button>
         </div>
+
+        <!-- The ONE AND ONLY Map Container -->
         <div id="map"></div>
-        <div id="markerDialogOverlay" class="dialog-overlay">
+
+        <!-- The ONE AND ONLY Marker Dialog Overlay -->
+        <div id="markerDialogOverlay" class="custom-dialog-overlay">
+            <div class="custom-dialog-content">
+                <p id="dialogPromptText">Enter message and select color:</p>
+                <label for="markerMessageInput">Message:</label>
+                <input type="text" id="markerMessageInput" placeholder="My spot">
+
+                <label>Marker Color:</label>
+                <div class="color-options" id="colorOptionsContainer">
+                    <!-- This div should be EMPTY in HTML. JS will populate it. -->
+                </div>
+
+                <div class="dialog-buttons">
+                    <button class="ok-button" id="dialogOkButton">OK</button>
+                    <button class="cancel-button" id="dialogCancelButton">Cancel</button>
+                </div>
+            </div>
+
+            <!-- Collection Options (part of marker dialog, but nested for clarity) -->
             <div id="collectionOptionsContainer" class="dialog-section">
                 <h3>Select Collections (Optional)</h3>
                 <div id="collectionsList" class="color-options-grid">
-                    </div>
+                    <!-- Dynamic collection checkboxes will go here (empty in HTML) -->
+                </div>
                 <input type="text" id="newCollectionInput" placeholder="New collection name (optional)">
                 <button id="createCollectionButton">Create New Collection</button>
             </div>
         </div>
     </div>
 
-    <div id="map"></div>
-
-    <div id="markerDialogOverlay" class="custom-dialog-overlay">
-        <div class="custom-dialog-content">
-            <p id="dialogPromptText">Enter message and select color:</p>
-            <label for="markerMessageInput">Message:</label>
-            <input type="text" id="markerMessageInput" placeholder="My spot">
-
-            <label>Marker Color:</label>
-            <div class="color-options" id="colorOptionsContainer">
-                <span>Red</span>
-                </label>
-                
-            </div>
-
-            <div class="dialog-buttons">
-                <button class="ok-button" id="dialogOkButton">OK</button>
-                <button class="cancel-button" id="dialogCancelButton">Cancel</button>
-            </div>
-        </div>
-    </div>
-
+    <!-- JavaScript Libraries (Load these FIRST, before your script.js) -->
+    <!-- Leaflet JavaScript -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script> 
     
+    <!-- Supabase JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-
-
+    <!-- Your Project's JavaScript (Load this LAST) -->
     <script src="script.js"></script>
 
     <p style="font-size: 6px;">yeet</p>
