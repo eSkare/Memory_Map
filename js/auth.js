@@ -1,7 +1,9 @@
 // js/auth.js
 import { supabase } from '/Memory_Map/js/supabaseClient.js';
 import { loadMarkersForCurrentUser } from '/Memory_Map/js/map.js'; // Will need this to refresh map on auth change
-import { loadCollectionsForCurrentUser } from '/Memory_Map/js/collections.js'; // Will need this to refresh collections
+//import { loadCollectionsForCurrentUser } from '/Memory_Map/js/collections.js'; // Will need this to refresh collections
+
+import { clearCollectionsUI, resetCollectionSelection, loadCollectionsForCurrentUser } from '/Memory_Map/js/collections.js';
 
 const authContainer = document.getElementById('auth-container');
 const appContainer = document.getElementById('app-container');

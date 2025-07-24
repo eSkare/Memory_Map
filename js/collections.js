@@ -58,6 +58,16 @@ export function resetCollectionSelection() {
     newCollectionInput.value = '';
 }
 
+// *** ADD THIS NEW EXPORTED FUNCTION ***
+export function clearCollectionsUI() {
+    console.log('Clearing collections UI...');
+    collectionsList.innerHTML = ''; // Clear the list of collection checkboxes/labels
+    currentCollections = []; // Also clear the internal array of current collections
+    newCollectionInput.value = ''; // Clear the new collection input field
+    // If you have other collection-related UI elements, clear them here too
+}
+// **************************************
+
 export function setupCollectionListeners() {
     createCollectionButton.addEventListener('click', async () => {
         const newName = newCollectionInput.value.trim();
