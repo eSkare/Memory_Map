@@ -216,6 +216,7 @@
 
     <!-- Authentication Forms (visible when logged out) -->
     <div id="auth-container">
+        <div id="message-display" class="message-display"></div>
         <div id="login-form" class="auth-section">
             <h2>Login</h2>
             <input type="email" id="login-email" placeholder="Email">
@@ -236,6 +237,7 @@
 
     <!-- Main Application Container (visible when logged in) -->
     <div id="app-container" style="display: none;">
+        <div id="app-message-display" class="message-display"></div>
         <div id="user-info">
             Welcome, <span id="current-username">Guest</span>!
             <button id="logout-button">Logout</button>

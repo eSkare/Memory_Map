@@ -5,6 +5,60 @@ import { loadMarkersForCurrentUser } from '/Memory_Map/js/map.js'; // Will need 
 
 import { clearCollectionsUI, resetCollectionSelection, loadCollectionsForCurrentUser } from '/Memory_Map/js/collections.js';
 
+// Get references to your new message display elements
+const authMessageDisplay = document.getElementById('message-display');
+const appMessageDisplay = document.getElementById('app-message-display'); // If you chose to use two
+
+/**
+ * Displays a message in the UI for a set duration.
+ * @param {string} message The message text.
+ * @param {string} type 'success', 'error', or 'warning'.
+ * @param {HTMLElement} displayElement The DOM element to display the message in.
+ * @param {number} durationMs How long the message should be visible in milliseconds. (Default: 3000 for success/warning, 0 for error to persist)
+ */
+function displayUIMessage(message, type, displayElement, durationMs) {
+    if (!displayElement) {
+        console.error("Message display element not found:", displayElement);
+        return;
+    }
+
+    displayElement.textContent = message;
+    displayElement.className = `message-display ${type}`; // Reset and apply type class
+    displayElement.style.display = 'block'; // Make it visible
+    displayElement.style.opacity = '1';
+
+    // Clear any existing timeout to prevent conflicts
+    if (displayElement.timeoutId) {
+        clearTimeout(displayElement.timeoutId);
+    }
+
+    if (durationMs !== 0) { // If duration is 0, message persists until cleared manually
+        displayElement.timeoutId = setTimeout(() => {
+            displayElement.style.opacity = '0';
+            displayElement.timeoutId = setTimeout(() => {
+                displayElement.style.display = 'none';
+                displayElement.textContent = ''; // Clear text after fading
+            }, 500); // Wait for transition to complete before hiding
+        }, durationMs || 3000); // Default to 3 seconds for non-error messages
+    }
+}
+
+/**
+ * Manually clears a message display.
+ * @param {HTMLElement} displayElement The DOM element to clear.
+ */
+function clearUIMessage(displayElement) {
+    if (displayElement.timeoutId) {
+        clearTimeout(displayElement.timeoutId);
+    }
+    displayElement.style.opacity = '0';
+    displayElement.timeoutId = setTimeout(() => {
+        displayElement.style.display = 'none';
+        displayElement.textContent = '';
+    }, 500);
+}
+
+
 const authContainer = document.getElementById('auth-container');
 const appContainer = document.getElementById('app-container');
 const loginForm = document.getElementById('login-form');
@@ -42,9 +96,13 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
         const password = loginPasswordInput.value;
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
-            alert(error.message);
+            console.error('Login error:', error.message);
+            // alert(error.message); // OLD
+            displayUIMessage(error.message, 'error', authMessageDisplay, 0); // NEW
         } else {
-            alert('Logged in successfully!');
+            // alert('Logged in successfully!'); // OLD
+            displayUIMessage('Logged in successfully!', 'success', authMessageDisplay, 3000); // NEW
+            clearUIMessage(authMessageDisplay); // Clear if you're transitioning away quickly
         }
     });
 
@@ -70,15 +128,16 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
         });
     
         if (signUpError) {
-            console.error('Supabase Auth signUp error:', signUpError.message);
-            alert(signUpError.message);
-            return;
-        }
-    
-    
-        // Now, always alert the user to check their email after successful signup call
-        alert('Sign up successful! Please check your email to confirm your account before logging in.');
+                console.error('Supabase Auth signUp error:', signUpError.message);
+                // alert(signUpError.message); // OLD
+                displayUIMessage(signUpError.message, 'error', authMessageDisplay, 0); // NEW: Error persists until manually cleared or new action
+                return;
+            }
+
+        // alert('Sign up successful! Please check your email to confirm your account before logging in.'); // OLD
+        displayUIMessage('Sign up successful! Please check your email to confirm your account before logging in.', 'success', authMessageDisplay, 5000); // NEW: Success message, 5 seconds
         console.log('User signed up. Awaiting email confirmation.');
+        clearUIMessage(authMessageDisplay); // Clear message when switching views or after successful confirmation.
         // Optionally, clear form fields here
         signupEmailInput.value = '';
         signupPasswordInput.value = '';
@@ -86,14 +145,17 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
     });
 
     logoutButton.addEventListener('click', async () => {
-        console.log('Logout button clicked!'); // ADD THIS LINE
+        console.log('Logout button clicked!');
         const { error } = await supabase.auth.signOut();
         if (error) {
-            alert(error.message);
-            console.error('Logout error:', error.message); // ADD THIS LINE
+            // alert(error.message); // OLD
+            displayUIMessage(error.message, 'error', appMessageDisplay, 0); // NEW: Use app-specific display for logout
+            console.error('Logout error:', error.message);
         } else {
-            alert('Logged out successfully!');
-            console.log('Logout successful!'); // ADD THIS LINE
+            // alert('Logged out successfully!'); // OLD
+            displayUIMessage('Logged out successfully!', 'success', appMessageDisplay, 3000); // NEW
+            console.log('Logout successful!');
+            clearUIMessage(appMessageDisplay); // This will be handled by onAuthStateChange hiding the app view
         }
     });
 
@@ -134,6 +196,7 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
                     console.error("Failed to create missing profile after sign-in:", createProfileError.message);
                     currentUserSpan.textContent = session.user.email || 'User (profile missing)';
                     // Don't alert here unless it's a critical, unrecoverable error, as it might spam the user on refresh
+                    displayUIMessage("Your profile could not be created automatically. Please contact support.", 'error', appMessageDisplay, 0); // NEW
                 } else {
                     console.log("Missing profile successfully created for user:", usernameToUse);
                     currentUserSpan.textContent = usernameToUse;
@@ -147,6 +210,9 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
             // Load markers and collections only once the user is logged in AND profile is handled
             loadMarkersForCurrentUser();
             loadCollectionsForCurrentUser();
+
+            clearUIMessage(authMessageDisplay); // Clear any old login/signup messages when app loads
+            clearUIMessage(appMessageDisplay); // Clear any old logout messages when logged in
 
         } else {
             // User is logged out
@@ -164,6 +230,9 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
             }
             clearCollectionsUI(); // Assuming you have this function
             resetCollectionSelection(); // Assuming you have this function
+
+            clearUIMessage(authMessageDisplay); // Clear any auth messages when logging out
+            clearUIMessage(appMessageDisplay); // Clear any app messages when logging out (e.g., "Logged out successfully")
         }
     });
 }
