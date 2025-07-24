@@ -156,6 +156,14 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
     supabase.auth.onAuthStateChange(async (event, session) => {
         console.log('Auth state changed! Event:', event, 'Session:', session ? 'Session Object Present' : 'Session is null'); // More concise Session log
 
+        if (session) {
+            console.log("--- Full Session Object Contents (Start) ---");
+            console.log("Session object:", session);
+            console.log("Session user object:", session.user);
+            console.log("Session user ID (direct access):", session.user ? session.user.id : 'User ID not found');
+            console.log("--- Full Session Object Contents (End) ---");
+        }
+
         // Conditional clearing of messages based on state transition
         if (event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) {
             clearUIMessage(authMessageDisplay);
