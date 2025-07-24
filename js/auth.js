@@ -1,211 +1,135 @@
-// js/auth.js - SIMPLIFIED VERSION FOR DEBUGGING
+// js/auth.js - ABSOLUTE BARE MINIMUM FOR AUTH STATE TOGGLE
 
 import { supabase } from '/Memory_Map/js/supabaseClient.js';
-// Temporarily removing these imports to simplify and isolate
-// import { loadMarkersForCurrentUser } from '/Memory_Map/js/map.js';
-// import { clearCollectionsUI, resetCollectionSelection, loadCollectionsForCurrentUser } from '/Memory_Map/js/collections.js';
 
-// Get references to your new message display elements
-const authMessageDisplay = document.getElementById('message-display');
-const appMessageDisplay = document.getElementById('app-message-display');
-
-// Simplified display functions - keep them minimal
-function displayUIMessage(message, type, displayElement, durationMs = 3000) {
-    if (!displayElement) return;
-    displayElement.textContent = message;
-    displayElement.className = `message-display ${type}`;
-    displayElement.style.display = 'block';
-    setTimeout(() => {
-        displayElement.style.display = 'none';
-        displayElement.textContent = '';
-    }, durationMs);
-}
-
-function clearUIMessage(displayElement) {
-    if (!displayElement) return;
-    displayElement.style.display = 'none';
-    displayElement.textContent = '';
-}
-
+// Get references to core UI elements
 const authContainer = document.getElementById('auth-container');
 const appContainer = document.getElementById('app-container');
+
+// Auth form elements
 const loginForm = document.getElementById('login-form');
 const signupForm = document.getElementById('signup-form');
 const showSignupBtn = document.getElementById('show-signup');
 const showLoginBtn = document.getElementById('show-login');
 
+// Login form inputs/button
 const loginEmailInput = document.getElementById('login-email');
 const loginPasswordInput = document.getElementById('login-password');
 const loginButton = document.getElementById('login-button');
 
+// Signup form inputs/button
 const signupEmailInput = document.getElementById('signup-email');
 const signupPasswordInput = document.getElementById('signup-password');
-const signupUsernameInput = document.getElementById('signup-username');
+const signupUsernameInput = document.getElementById('signup-username'); // Still needed for sign-up options
 const signupButton = document.getElementById('signup-button');
 
-const currentUserSpan = document.getElementById('current-username');
+// Logout button
 const logoutButton = document.getElementById('logout-button');
 
+// For this minimal test, we are intentionally ignoring:
+// - currentUserSpan
+// - custom message display elements (using alert for critical errors)
+// - map/collection imports and functions
 
-export function setupAuthUI(mapInstance) { // mapInstance might be unused in this simplified version
-    // Event listeners for login/signup forms
+// Function to update UI based on session presence
+function updateAuthUI(session) {
+    if (session) {
+        console.log("[BARE MINIMUM] Session found. Showing app container.");
+        authContainer.style.display = 'none';
+        appContainer.style.display = 'block';
+        // If you still have currentUserSpan in your HTML, you could do:
+        // document.getElementById('current-username').textContent = session.user.email || 'Logged In';
+    } else {
+        console.log("[BARE MINIMUM] No session found. Showing auth container.");
+        authContainer.style.display = 'block';
+        appContainer.style.display = 'none';
+        // If you still have currentUserSpan in your HTML, you could do:
+        // document.getElementById('current-username').textContent = 'Guest';
+    }
+}
+
+export function setupAuthUI() { // mapInstance parameter is not needed for this minimal test
+    // Toggle between login/signup forms
     showSignupBtn.addEventListener('click', (e) => {
         e.preventDefault();
         loginForm.style.display = 'none';
         signupForm.style.display = 'block';
-        clearUIMessage(authMessageDisplay);
     });
 
     showLoginBtn.addEventListener('click', (e) => {
         e.preventDefault();
         signupForm.style.display = 'none';
         loginForm.style.display = 'block';
-        clearUIMessage(authMessageDisplay);
     });
 
+    // Login logic
     loginButton.addEventListener('click', async () => {
         const email = loginEmailInput.value;
         const password = loginPasswordInput.value;
+        console.log("[BARE MINIMUM] Attempting login...");
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
             console.error('Login error:', error.message);
-            displayUIMessage(error.message, 'error', authMessageDisplay, 0);
+            alert('Login failed: ' + error.message); // Use alert for critical feedback
         } else {
-            displayUIMessage('Logging in...', 'success', authMessageDisplay, 1000);
+            console.log('Login successful.');
+            // UI will be updated by onAuthStateChange, which fires immediately after login
         }
     });
 
+    // Signup logic
     signupButton.addEventListener('click', async () => {
         const email = signupEmailInput.value;
         const password = signupPasswordInput.value;
-        const username = signupUsernameInput.value;
+        const username = signupUsernameInput.value; // Get username for metadata
 
         if (!username) {
-            displayUIMessage('Please provide a username.', 'warning', authMessageDisplay, 3000);
+            alert('Please provide a username.');
             return;
         }
-        clearUIMessage(authMessageDisplay);
-        console.log('Attempting Supabase Auth signUp...');
+        console.log("[BARE MINIMUM] Attempting signup...");
         const { data: { user }, error: signUpError } = await supabase.auth.signUp({
             email,
             password,
             options: {
-                data: { username: username }
+                data: { username: username } // Pass username as metadata
             }
         });
 
         if (signUpError) {
             console.error('Supabase Auth signUp error:', signUpError.message);
-            displayUIMessage(signUpError.message, 'error', authMessageDisplay, 0);
-            return;
+            alert('Sign up failed: ' + signUpError.message);
+        } else {
+            console.log('User signed up. Awaiting email confirmation.');
+            alert('Sign up successful! Please check your email to confirm your account before logging in.');
+            signupEmailInput.value = '';
+            signupPasswordInput.value = '';
+            signupUsernameInput.value = '';
         }
-
-        displayUIMessage('Sign up successful! Please check your email to confirm your account before logging in.', 'success', authMessageDisplay, 5000);
-        console.log('User signed up. Awaiting email confirmation.');
-        signupEmailInput.value = '';
-        signupPasswordInput.value = '';
-        signupUsernameInput.value = '';
     });
 
+    // Logout logic
     logoutButton.addEventListener('click', async () => {
         console.log('Logout button clicked!');
         const { error } = await supabase.auth.signOut();
         if (error) {
-            displayUIMessage(error.message, 'error', appMessageDisplay, 0);
             console.error('Logout error:', error.message);
+            alert('Logout failed: ' + error.message);
         } else {
-            displayUIMessage('Logged out successfully!', 'success', appMessageDisplay, 3000);
-            console.log('Logout successful!');
+            console.log('Logout successful.');
+            // UI will be updated by onAuthStateChange
         }
     });
 
-
-    // --- CRITICAL: Simplified onAuthStateChange listener ---
-    supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log(`[SIMPLIFIED onAuthStateChange] Auth state changed! Event: ${event}. Session: ${session ? 'Object Present' : 'Null'}`);
-
-        // Clear messages for state transitions
-        if (event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) {
-            clearUIMessage(authMessageDisplay);
-        } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
-            clearUIMessage(appMessageDisplay);
-        }
-
-        if (session) {
-            console.log("[SIMPLIFIED] Entering logged-in state logic.");
-            authContainer.style.display = 'none';
-            appContainer.style.display = 'block';
-
-            currentUserSpan.textContent = 'Loading profile...';
-            console.log("[SIMPLIFIED] currentUserSpan set to 'Loading profile...'");
-
-            try {
-                console.log("[SIMPLIFIED] Supabase client object status:", supabase ? 'Available' : 'NOT AVAILABLE');
-
-                if (!supabase) {
-                    console.error("[SIMPLIFIED] Supabase client is not initialized!");
-                    currentUserSpan.textContent = 'Error: Supabase not ready';
-                    displayUIMessage("An internal error occurred (Supabase client not initialized).", 'error', appMessageDisplay, 0);
-                    return;
-                }
-
-                console.log("[SIMPLIFIED] Attempting to fetch profile for user ID:", session.user.id);
-
-                const { data: profile, error: profileFetchError } = await supabase
-                    .from('profiles')
-                    .select('username')
-                    .eq('id', session.user.id)
-                    .single();
-
-                // --- CRITICAL DEBUG LOGS ---
-                console.log("[SIMPLIFIED] Profile fetch await resolved. Profile:", profile, "Error:", profileFetchError);
-                alert("[SIMPLIFIED] Await resolved! Profile: " + (profile ? profile.username : 'NULL') + ", Error: " + (profileFetchError ? profileFetchError.message : 'NULL'));
-                // --- END CRITICAL DEBUG LOGS ---
-
-                if (profile) {
-                    console.log("[SIMPLIFIED] PROFILE FETCH SUCCESS: Profile data received:", profile);
-                    currentUserSpan.textContent = profile.username;
-                    console.log(`[SIMPLIFIED] currentUserSpan updated to: ${profile.username}`);
-                    displayUIMessage(`Welcome back, ${profile.username}! (Simplified)`, 'success', appMessageDisplay, 3000);
-                } else if (profileFetchError && profileFetchError.message.includes('rows returned')) {
-                    console.warn("[SIMPLIFIED] PROFILE NOT FOUND: Attempting to create one...");
-                    const usernameToUse = session.user.user_metadata?.username || (session.user.email ? session.user.email.split('@')[0] : 'UnknownUser');
-                    const { error: createProfileError } = await supabase.from('profiles').insert({ id: session.user.id, username: usernameToUse });
-                    if (createProfileError) {
-                        console.error("[SIMPLIFIED] FAILED TO CREATE PROFILE:", createProfileError.message);
-                        currentUserSpan.textContent = session.user.email || 'User (profile missing, creation failed)';
-                        displayUIMessage("Profile creation failed.", 'error', appMessageDisplay, 0);
-                    } else {
-                        console.log("[SIMPLIFIED] Profile created successfully.");
-                        currentUserSpan.textContent = usernameToUse;
-                        displayUIMessage(`Profile created. Welcome, ${usernameToUse}! (Simplified)`, 'success', appMessageDisplay, 3000);
-                    }
-                } else {
-                    console.error("[SIMPLIFIED] ERROR FETCHING PROFILE (Other reason):", profileFetchError?.message);
-                    currentUserSpan.textContent = session.user.email || 'User (error fetching profile)';
-                    displayUIMessage(`Error fetching profile: ${profileFetchError?.message}`, 'error', appMessageDisplay, 0);
-                }
-            } catch (e) {
-                console.error("[SIMPLIFIED] UNCAUGHT ERROR DURING PROFILE FETCH BLOCK:", e);
-                currentUserSpan.textContent = session.user.email || 'User (profile fetch failed)';
-                displayUIMessage(`An unexpected error occurred: ${e.message}`, 'error', appMessageDisplay, 0);
-            }
-            // Temporarily not calling loadMarkersForCurrentUser() or loadCollectionsForCurrentUser()
-            console.log("[SIMPLIFIED] End of logged-in state logic.");
-
-        } else {
-            // User is logged out
-            console.log('[SIMPLIFIED] Entering logged-out state logic.');
-            authContainer.style.display = 'block';
-            appContainer.style.display = 'none';
-            currentUserSpan.textContent = 'Guest';
-            displayUIMessage('You are currently a guest. (Simplified)', 'warning', authMessageDisplay, 3000);
-
-            // Temporarily not clearing map layers or collections UI
-            // if (mapInstance && mapInstance.eachLayer) { /* ... */ }
-            // clearCollectionsUI();
-            // resetCollectionSelection();
-        }
+    // --- Core Authentication State Listener ---
+    // This listener is key: it reacts to ANY auth state change (login, logout, refresh with session)
+    supabase.auth.onAuthStateChange((event, session) => {
+        console.log(`[BARE MINIMUM onAuthStateChange] Auth state changed! Event: ${event}. Session: ${session ? 'Object Present' : 'Null'}`);
+        updateAuthUI(session); // Call the function to update UI based on the session
     });
-    console.log("Auth setup complete (simplified version).");
+
+    // Initial check on page load: onAuthStateChange should fire with 'INITIAL_SESSION'
+    // or 'SIGNED_IN' if a session exists from a previous visit.
+
+    console.log("Auth setup complete (BARE MINIMUM version).");
 }
