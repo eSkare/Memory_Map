@@ -154,22 +154,26 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
     });
 
     supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log('Auth state changed! Event:', event, 'Session:', session);
+        console.log('Auth state changed! Event:', event, 'Session:', session ? 'Session Object Present' : 'Session is null'); // More concise Session log
 
-        // This is crucial: Based on the event, decide what to clear.
-        // Don't clear *all* messages every time, as it might clear ones you just set.
+        // Conditional clearing of messages based on state transition
         if (event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) {
-            // If we are about to display the app UI, clear auth form messages.
             clearUIMessage(authMessageDisplay);
         } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
-            // If we are about to display the auth UI, clear app messages.
             clearUIMessage(appMessageDisplay);
         }
 
         if (session) {
-            console.log("Setting UI to logged-in state."); // For debugging
+            console.log("Entering logged-in state logic.");
             authContainer.style.display = 'none';
             appContainer.style.display = 'block';
+
+            // Set a temporary loading state for the username BEFORE fetching the profile
+            currentUserSpan.textContent = 'Loading profile...';
+            console.log("currentUserSpan set to 'Loading profile...'");
+
+            // Log the user ID we're about to query for debugging RLS issues
+            console.log("Attempting to fetch profile for user ID:", session.user.id);
 
             const { data: profile, error: profileFetchError } = await supabase
                 .from('profiles')
@@ -178,47 +182,53 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
                 .single();
 
             if (profile) {
+                console.log("Profile fetch successful. Profile data:", profile);
                 currentUserSpan.textContent = profile.username;
-                console.log("Profile found:", profile.username);
-                // Only display welcome message if it's a fresh sign-in or a page load where they were already signed in
+                console.log(`currentUserSpan updated to: ${profile.username}`);
+
                 if (event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) {
                     displayUIMessage(`Welcome back, ${profile.username}!`, 'success', appMessageDisplay, 3000);
                 }
             } else if (profileFetchError && profileFetchError.message.includes('rows returned')) {
-                console.warn("No profile found for user:", session.user.id, "Attempting to create one...");
-
-                const usernameToUse = session.user.user_metadata?.username || session.user.email.split('@')[0];
+                // This means no profile was found for the user's ID
+                console.warn("PROFILE NOT FOUND: No profile found for user ID:", session.user.id, "Attempting to create one...");
+                
+                // Get username from user_metadata (set during signup) or default to email prefix
+                const usernameToUse = session.user.user_metadata?.username || (session.user.email ? session.user.email.split('@')[0] : 'UnknownUser');
+                console.log("Proposed username for new profile:", usernameToUse);
 
                 const { error: createProfileError } = await supabase
                     .from('profiles')
                     .insert({ id: session.user.id, username: usernameToUse });
 
                 if (createProfileError) {
-                    console.error("Failed to create missing profile after sign-in:", createProfileError.message);
-                    currentUserSpan.textContent = session.user.email || 'User (profile missing)';
+                    console.error("FAILED TO CREATE PROFILE:", createProfileError.message);
+                    currentUserSpan.textContent = session.user.email || 'User (profile missing, creation failed)';
                     displayUIMessage("Your profile could not be created automatically. Please contact support.", 'error', appMessageDisplay, 0);
                 } else {
-                    console.log("Missing profile successfully created for user:", usernameToUse);
+                    console.log("Profile created successfully for user:", usernameToUse);
                     currentUserSpan.textContent = usernameToUse;
                     displayUIMessage(`Profile created. Welcome, ${usernameToUse}!`, 'success', appMessageDisplay, 3000);
                 }
             } else {
-                console.error("Unexpected error fetching profile:", profileFetchError?.message);
-                currentUserSpan.textContent = session.user.email || 'User (error fetching profile)';
+                // This captures other types of errors, e.g., network issues, RLS blocking SELECT
+                console.error("ERROR FETCHING PROFILE (Other reason):", profileFetchError?.message);
+                currentUserSpan.textContent = session.user.email || 'User (error fetching profile)'; // Fallback if general error
                 displayUIMessage(`Error fetching your profile: ${profileFetchError?.message}`, 'error', appMessageDisplay, 0);
             }
 
+            // Load markers and collections only once the user is logged in AND profile is handled
             loadMarkersForCurrentUser();
             loadCollectionsForCurrentUser();
 
         } else {
-            console.log("Setting UI to guest state."); // For debugging
+            // User is logged out
+            console.log('Entering logged-out state logic.');
             authContainer.style.display = 'block';
             appContainer.style.display = 'none';
-            currentUserSpan.textContent = 'Guest';
+            currentUserSpan.textContent = 'Guest'; // ONLY place to set 'Guest' when genuinely logged out
 
             // Only display 'You are currently a guest.' if not coming from a successful logout.
-            // A successful logout should have its own message displayed by logoutButton listener.
             if (event !== 'SIGNED_OUT') {
                 displayUIMessage('You are currently a guest.', 'warning', authMessageDisplay, 3000);
             }
@@ -226,7 +236,7 @@ export function setupAuthUI(mapInstance) { // Pass map instance if needed for cl
             // Clear map, markers, etc. for logged-out state
             if (mapInstance && mapInstance.eachLayer) {
                 mapInstance.eachLayer(function (layer) {
-                    if (layer._icon || layer._path) {
+                    if (layer._icon || layer._path) { // Check if it's a marker or polyline/polygon
                         mapInstance.removeLayer(layer);
                     }
                 });
