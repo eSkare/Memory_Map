@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memory Map</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <link rel="stylesheet" href="style.css">
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
@@ -209,6 +212,43 @@
 <body>
     <h1>Memory Map! 🗺️</h1>
     <p>A place to store your favorite locations📍</p>
+
+
+    <div id="auth-container">
+        <div id="login-form" class="auth-section">
+            <h2>Login</h2>
+            <input type="email" id="login-email" placeholder="Email">
+            <input type="password" id="login-password" placeholder="Password">
+            <button id="login-button">Login</button>
+            <p>Don't have an account? <a href="#" id="show-signup">Sign Up</a></p>
+        </div>
+
+        <div id="signup-form" class="auth-section" style="display: none;">
+            <h2>Sign Up</h2>
+            <input type="email" id="signup-email" placeholder="Email">
+            <input type="password" id="signup-password" placeholder="Password">
+            <input type="text" id="signup-username" placeholder="Username (Unique)">
+            <button id="signup-button">Sign Up</button>
+            <p>Already have an account? <a href="#" id="show-login">Login</a></p>
+        </div>
+    </div>
+
+    <div id="app-container" style="display: none;">
+        <div id="user-info">
+            Welcome, <span id="current-username">Guest</span>!
+            <button id="logout-button">Logout</button>
+        </div>
+        <div id="map"></div>
+        <div id="markerDialogOverlay" class="dialog-overlay">
+            <div id="collectionOptionsContainer" class="dialog-section">
+                <h3>Select Collections (Optional)</h3>
+                <div id="collectionsList" class="color-options-grid">
+                    </div>
+                <input type="text" id="newCollectionInput" placeholder="New collection name (optional)">
+                <button id="createCollectionButton">Create New Collection</button>
+            </div>
+        </div>
+    </div>
 
     <div id="map"></div>
 

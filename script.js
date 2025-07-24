@@ -1,4 +1,8 @@
-// script.js
+// At the very top of your script.js
+const SUPABASE_URL = 'https://szcotkwupwrbawgprkbk.supabase.co'; // Replace with your Project URL
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6Y290a3d1cHdyYmF3Z3Bya2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzNTEyNDcsImV4cCI6MjA2ODkyNzI0N30.e-cQbi9lt803sGD-SUItopcE6WgmYcxLFgPsGFp32zI'; // Replace with your anon key
+
+const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Define the latitude and longitude for Bergen, Norway (your initial view)
 const bergenLat = 60.39;
@@ -23,6 +27,7 @@ const supportedMarkerColors = {
     'Orange': '#e67e22',
     'Gray': '#95a5a6'
 };
+
 
 // Function to create an L.divIcon with the specified color
 function createColoredDivIcon(colorName) {
@@ -163,29 +168,354 @@ markerMessageInput.addEventListener('keydown', (e) => {
 // });
 
 
+// ... (Supabase initialization and existing map/marker code) ...
+
+// --- Auth UI Elements ---
+const authContainer = document.getElementById('auth-container');
+const appContainer = document.getElementById('app-container');
+const loginForm = document.getElementById('login-form');
+const signupForm = document.getElementById('signup-form');
+const showSignupBtn = document.getElementById('show-signup');
+const showLoginBtn = document.getElementById('show-login');
+
+const loginEmailInput = document.getElementById('login-email');
+const loginPasswordInput = document.getElementById('login-password');
+const loginButton = document.getElementById('login-button');
+
+const signupEmailInput = document.getElementById('signup-email');
+const signupPasswordInput = document.getElementById('signup-password');
+const signupUsernameInput = document.getElementById('signup-username');
+const signupButton = document.getElementById('signup-button');
+
+const currentUserSpan = document.getElementById('current-username');
+const logoutButton = document.getElementById('logout-button');
+
+// --- Collection UI Elements (within dialog) ---
+const collectionOptionsContainer = document.getElementById('collectionOptionsContainer');
+const collectionsList = document.getElementById('collectionsList');
+const newCollectionInput = document.getElementById('newCollectionInput');
+const createCollectionButton = document.getElementById('createCollectionButton');
+
+// --- Auth UI Logic ---
+showSignupBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    loginForm.style.display = 'none';
+    signupForm.style.display = 'block';
+});
+
+showLoginBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    signupForm.style.display = 'none';
+    loginForm.style.display = 'block';
+});
+
+loginButton.addEventListener('click', async () => {
+    const email = loginEmailInput.value;
+    const password = loginPasswordInput.value;
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+        alert(error.message);
+    } else {
+        // Auth state change listener will handle UI update
+        alert('Logged in successfully!');
+    }
+});
+
+signupButton.addEventListener('click', async () => {
+    const email = signupEmailInput.value;
+    const password = signupPasswordInput.value;
+    const username = signupUsernameInput.value;
+
+    if (!username) {
+        alert('Please provide a username.');
+        return;
+    }
+
+    // Sign up the user
+    const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+            data: { username: username } // Pass username to signup for profiles table creation via RLS policy
+        }
+    });
+
+    if (signUpError) {
+        alert(signUpError.message);
+        return;
+    }
+
+    if (user) {
+        // Automatically create a profile entry for the new user
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({ id: user.id, username: username }); // user.id comes from Supabase Auth
+
+        if (profileError) {
+            console.error('Error creating user profile:', profileError.message);
+            alert('Sign up successful, but failed to create user profile. Please try logging in.');
+            // You might want to delete the auth user here if profile creation is critical
+            await supabase.auth.signOut();
+        } else {
+            alert('Signed up and logged in successfully! Welcome, ' + username + '!');
+        }
+    } else {
+        alert('Please check your email to confirm your account.');
+    }
+});
+
+logoutButton.addEventListener('click', async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+        alert(error.message);
+    } else {
+        alert('Logged out successfully!');
+        // Auth state change listener will handle UI update
+    }
+});
+
+// --- Supabase Auth State Change Listener ---
+// This is crucial for managing UI based on user login status
+supabase.auth.onAuthStateChange(async (event, session) => {
+    if (session) {
+        // User is logged in
+        authContainer.style.display = 'none';
+        appContainer.style.display = 'block';
+        const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', session.user.id)
+            .single();
+
+        if (profile) {
+            currentUserSpan.textContent = profile.username;
+        } else {
+            currentUserSpan.textContent = session.user.email || 'User'; // Fallback
+            console.error("Error fetching profile:", error?.message);
+        }
+
+        loadMarkersForCurrentUser(); // Load existing markers for this user
+        loadCollectionsForCurrentUser(); // Load existing collections
+    } else {
+        // User is logged out
+        authContainer.style.display = 'block';
+        appContainer.style.display = 'none';
+        loginForm.style.display = 'block'; // Show login form by default
+        signupForm.style.display = 'none';
+        map.eachLayer(function(layer) { // Clear all markers from map on logout
+            if (layer instanceof L.Marker) {
+                map.removeLayer(layer);
+            }
+        });
+        currentUserSpan.textContent = 'Guest';
+    }
+});
+
+// --- Data Fetching and Saving Functions (Place after auth listener) ---
+
+let currentMarkers = []; // Store markers retrieved from DB
+let currentCollections = []; // Store collections retrieved from DB
+
+async function loadMarkersForCurrentUser() {
+    const user = supabase.auth.getUser();
+    if (!user) return; // Only load if logged in
+
+    const { data, error } = await supabase
+        .from('markers')
+        .select(`
+            id,
+            name,
+            latitude,
+            longitude,
+            color,
+            created_at,
+            marker_collections (
+                collection_id,
+                collections (
+                    name
+                )
+            )
+        `); // Select markers and their linked collection names
+
+    if (error) {
+        console.error('Error loading markers:', error.message);
+        return;
+    }
+
+    // Clear existing markers from map before redrawing
+    map.eachLayer(function(layer) {
+        if (layer instanceof L.Marker) {
+            map.removeLayer(layer);
+        }
+    });
+
+    currentMarkers = data; // Update local cache
+    currentMarkers.forEach(markerData => {
+        const newMarkerIcon = createColoredDivIcon(markerData.color);
+        const newMarker = L.marker([markerData.latitude, markerData.longitude], { icon: newMarkerIcon }).addTo(map);
+
+        let popupContent = `<b>${markerData.name}</b><br>
+                            Created: ${new Date(markerData.created_at).toLocaleDateString()}`;
+
+        if (markerData.marker_collections && markerData.marker_collections.length > 0) {
+            const collectionNames = markerData.marker_collections
+                .map(mc => mc.collections.name)
+                .join(', ');
+            popupContent += `<br>Collections: ${collectionNames}`;
+        }
+        newMarker.bindPopup(popupContent).openPopup();
+    });
+}
+
+async function loadCollectionsForCurrentUser() {
+    const user = supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+        .from('collections')
+        .select('id, name');
+
+    if (error) {
+        console.error('Error loading collections:', error.message);
+        return;
+    }
+
+    currentCollections = data; // Update local cache
+    renderCollectionOptions(); // Update the dialog with new collections
+}
+
+function renderCollectionOptions() {
+    collectionsList.innerHTML = ''; // Clear existing options
+    currentCollections.forEach(collection => {
+        const checkboxId = `collection-${collection.id}`;
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('collection-option-wrapper');
+
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.id = checkboxId;
+        input.name = 'selectedCollections';
+        input.value = collection.id;
+
+        const label = document.createElement('label');
+        label.htmlFor = checkboxId;
+        label.textContent = collection.name;
+
+        wrapper.appendChild(input);
+        wrapper.appendChild(label);
+        collectionsList.appendChild(wrapper);
+    });
+}
+
+createCollectionButton.addEventListener('click', async () => {
+    const newName = newCollectionInput.value.trim();
+    if (!newName) {
+        alert('Please enter a name for the new collection.');
+        return;
+    }
+
+    const { data, error } = await supabase
+        .from('collections')
+        .insert({ name: newName })
+        .select('id, name') // Select the new collection's data to update local cache
+        .single();
+
+    if (error) {
+        alert('Error creating collection: ' + error.message);
+    } else {
+        currentCollections.push(data); // Add to local cache
+        renderCollectionOptions(); // Re-render to show new collection
+        newCollectionInput.value = ''; // Clear input
+        alert('Collection created successfully!');
+    }
+});
+
+
+// --- MODIFIED: map.on('click') to use Supabase ---
 map.on('click', async function(e) {
+    const user = supabase.auth.getUser();
+    if (!user) {
+        alert('Please log in to add markers.');
+        return;
+    }
+
     const clickedLat = e.latlng.lat;
     const clickedLng = e.latlng.lng;
 
     try {
-        const userInput = await showMarkerDialog(clickedLat, clickedLng);
+        // Reset collection checkboxes
+        collectionsList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        newCollectionInput.value = ''; // Clear new collection input
 
-        let popupMessage = userInput.message;
+        const userInput = await showMarkerDialog(clickedLat, clickedLng); // Your existing dialog function
+
+        let markerName = userInput.message.trim();
         let markerColor = userInput.color;
 
-        const newMarkerIcon = createColoredDivIcon(markerColor);
-
-        const newMarker = L.marker([clickedLat, clickedLng], { icon: newMarkerIcon }).addTo(map);
-
-        if (popupMessage.trim() !== '') {
-            newMarker.bindPopup(popupMessage).openPopup();
-        } else {
-            newMarker.bindPopup(`New Marker at Lat: ${clickedLat.toFixed(4)}, Lng: ${clickedLng.toFixed(4)} (${markerColor})`).openPopup();
+        if (!markerName) {
+            markerName = `Marker at ${clickedLat.toFixed(4)}, ${clickedLng.toFixed(4)}`; // Default name if empty
         }
 
-        console.log(`New marker added at Lat: ${clickedLat}, Lng: ${clickedLng}, Color: ${markerColor}`);
+        // Get selected collection IDs
+        const selectedCollectionIds = Array.from(collectionsList.querySelectorAll('input[name="selectedCollections"]:checked'))
+                                            .map(cb => cb.value);
+
+        // Insert marker into Supabase
+        const { data: newMarkerData, error: markerError } = await supabase
+            .from('markers')
+            .insert({
+                user_id: user.id, // Link to current user
+                name: markerName,
+                latitude: clickedLat,
+                longitude: clickedLng,
+                color: markerColor
+            })
+            .select('id') // Get the ID of the newly created marker
+            .single();
+
+        if (markerError) {
+            console.error('Error saving marker:', markerError.message);
+            alert('Failed to save marker: ' + markerError.message);
+            return;
+        }
+
+        // Link marker to selected collections (if any)
+        if (selectedCollectionIds.length > 0) {
+            const linksToInsert = selectedCollectionIds.map(collectionId => ({
+                marker_id: newMarkerData.id,
+                collection_id: collectionId
+            }));
+            const { error: linkError } = await supabase
+                .from('marker_collections')
+                .insert(linksToInsert);
+
+            if (linkError) {
+                console.error('Error linking marker to collections:', linkError.message);
+                alert('Marker saved, but failed to link to some collections: ' + linkError.message);
+            }
+        }
+
+        alert('Marker added successfully!');
+        loadMarkersForCurrentUser(); // Reload all markers to display the new one
+        // No need to open popup here, loadMarkersForCurrentUser will handle it.
 
     } catch (error) {
-        console.log(error.message);
+        console.log(error.message); // Handle cancellation
     }
 });
+
+// Initial check when script loads (in case user is already logged in from a previous session)
+supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session) {
+        supabase.auth.onAuthStateChange((event, session) => { /* This line is redundant after initial call */ });
+    } else {
+        // No session, initial state setup
+        authContainer.style.display = 'block';
+        appContainer.style.display = 'none';
+        loginForm.style.display = 'block';
+        signupForm.style.display = 'none';
+    }
+});
+
+
+// ... (rest of your existing script.js, like createColoredDivIcon function) ...
