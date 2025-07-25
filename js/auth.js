@@ -207,9 +207,17 @@ export function setupAuthUI(mapInstance) {
                 }
             } catch (e) {
                 console.error("[AUTH-WORKAROUND] UNCAUGHT ERROR DURING PROFILE FETCH BLOCK (or timeout):", e.message);
-                displayUIMessage(`An unexpected error occurred: ${e.message}. Logging out.`, 'error', appMessageDisplay, 3000);
-                await supabase.auth.signOut(); // Force logout on any uncaught error
-                return;
+                displayUIMessage(`An unexpected error occurred: ${e.message}. Attempting to log out.`, 'error', appMessageDisplay, 3000);
+
+                // Add explicit logging for signOut attempt
+                console.log("[AUTH-WORKAROUND] Attempting to force signOut due to error.");
+                const { error: signOutError } = await supabase.auth.signOut();
+                if (signOutError) {
+                    console.error("[AUTH-WORKAROUND] Error during forced signOut:", signOutError.message);
+                    displayUIMessage(`Failed to log out: ${signOutError.message}. Please clear data.`, 'error', appMessageDisplay, 0);
+                } else {
+                    console.log("[AUTH-WORKAROUND] Force signOut completed successfully. Expecting SIGNED_OUT event.");
+                }
             }
 
             // Re-enable loading of map markers and collections
@@ -223,11 +231,11 @@ export function setupAuthUI(mapInstance) {
 
             console.log("[AUTH-WORKAROUND] End of logged-in state logic.");
 
-        } else {
+        } else { // This is the `else` block for `if (session)`
             // User is logged out
-            console.log('[AUTH-WORKAROUND] Entering logged-out state logic.');
-            authContainer.style.display = 'block';
-            appContainer.style.display = 'none';
+            console.log('[AUTH-WORKAROUND] Entering logged-out state logic. User should be sent to login screen.');
+            authContainer.style.display = 'block'; // Make auth visible
+            appContainer.style.display = 'none';   // Hide app
             if (currentUserSpan) currentUserSpan.textContent = 'Guest';
             displayUIMessage('You are currently a guest.', 'warning', authMessageDisplay, 3000);
 
