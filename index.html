@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memory Map - Debug Auth</title>
-
+    <title>Memory Map - Minimal Auth</title>
+    <!-- You can keep your basic style.css if it contains general auth form styling -->
     <link rel="stylesheet" href="style.css"> 
-    
-    </head>
+</head>
 <body>
-    <h1>Memory Map - Auth Debug! 🗺️</h1>
-    <p>A place to store your favorite locations📍</p>
+    <h1>Memory Map - Minimal Auth Test!</h1>
+    <p>Testing core authentication and refresh behavior.</p>
 
     <div id="auth-container">
         <div id="message-display" class="message-display"></div>
@@ -38,11 +37,11 @@
             Welcome, <span id="current-username">Loading...</span>!
             <button id="logout-button">Logout</button>
         </div>
+        <h3>Your Profile Data:</h3>
+        <pre id="profile-data-display"></pre>
+    </div>
 
-        </div>
-
+    <!-- This is the ONLY JavaScript file loaded directly -->
     <script src="/Memory_Map/script.js" type="module" defer></script>
-
-    <p style="font-size: 6px;">yeet</p>
 </body>
 </html>
