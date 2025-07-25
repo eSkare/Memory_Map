@@ -1,47 +1,120 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memory Map - Minimal Auth</title>
-    <!-- You can keep your basic style.css if it contains general auth form styling -->
-    <link rel="stylesheet" href="style.css"> 
+    <title>Supabase Test</title>
 </head>
 <body>
-    <h1>Memory Map - Minimal Auth Test!</h1>
-    <p>Testing core authentication and refresh behavior.</p>
-
+    <h1>Supabase Test App</h1>
     <div id="auth-container">
-        <div id="message-display" class="message-display"></div>
-        <div id="login-form" class="auth-section">
-            <h2>Login</h2>
-            <input type="email" id="login-email" placeholder="Email">
-            <input type="password" id="login-password" placeholder="Password">
-            <button id="login-button">Login</button>
-            <p>Don't have an account? <a href="#" id="show-signup">Sign Up</a></p>
-        </div>
-
-        <div id="signup-form" class="auth-section" style="display: none;">
-            <h2>Sign Up</h2>
-            <input type="email" id="signup-email" placeholder="Email">
-            <input type="password" id="signup-password" placeholder="Password">
-            <input type="text" id="signup-username" placeholder="Username (Unique)">
-            <button id="signup-button">Sign Up</button>
-            <p>Already have an account? <a href="#" id="show-login">Login</a></p>
-        </div>
+        <h2>Login / Signup</h2>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+        <button id="loginBtn">Login</button>
+        <button id="signupBtn">Sign Up</button>
     </div>
-
     <div id="app-container" style="display: none;">
-        <div id="app-message-display" class="message-display"></div>
-        <div id="user-info">
-            Welcome, <span id="current-username">Loading...</span>!
-            <button id="logout-button">Logout</button>
-        </div>
-        <h3>Your Profile Data:</h3>
-        <pre id="profile-data-display"></pre>
+        <h2>Welcome, <span id="usernameSpan"></span>!</h2>
+        <button id="logoutBtn">Logout</button>
+        <h3>Your Profile:</h3>
+        <pre id="profileData"></pre>
     </div>
 
-    <!-- This is the ONLY JavaScript file loaded directly -->
-    <script src="/Memory_Map/script.js" type="module" defer></script>
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        // YOUR PROJECT URL AND ANON KEY (as provided in your test.html)
+        const SUPABASE_URL = 'https://szcotkwupwrbawgprkbk.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6Y290a3d1cHdyYmF3Z3Bya2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzNTEyNDcsImV4cCI6MjA2ODkyNzI0N30.e-cQbi9lt803sGD-SUItopcE6WgmYcxLFp32zI';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const authContainer = document.getElementById('auth-container');
+        const appContainer = document.getElementById('app-container');
+        const usernameSpan = document.getElementById('usernameSpan');
+        const profileData = document.getElementById('profileData');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('loginBtn');
+        const signupBtn = document.getElementById('signupBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        async function fetchUserProfile(userId) {
+            console.log("Attempting to fetch profile for user ID:", userId);
+            try {
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('username')
+                    .eq('id', userId)
+                    .single();
+
+                if (error && error.message !== 'PGRST116: The result contains 0 rows') {
+                    console.error("Error fetching profile:", error);
+                    return null;
+                }
+                console.log("Profile data received:", profile);
+                return profile;
+            } catch (e) {
+                console.error("Caught error during profile fetch:", e);
+                return null;
+            }
+        }
+
+        async function updateUI(session) {
+            if (session) {
+                authContainer.style.display = 'none';
+                appContainer.style.display = 'block';
+                usernameSpan.textContent = session.user.email; // Set to email initially
+
+                const profile = await fetchUserProfile(session.user.id);
+                if (profile) {
+                    usernameSpan.textContent = profile.username; // Update to username if fetched
+                    profileData.textContent = JSON.stringify(profile, null, 2);
+                } else {
+                    profileData.textContent = "Profile not found or error fetching.";
+                }
+            } else {
+                authContainer.style.display = 'block';
+                appContainer.style.display = 'none';
+                usernameSpan.textContent = 'Guest';
+                profileData.textContent = '';
+            }
+        }
+
+        loginBtn.addEventListener('click', async () => {
+            const { error } = await supabase.auth.signInWithPassword({
+                email: emailInput.value,
+                password: passwordInput.value
+            });
+            if (error) console.error('Login failed:', error.message);
+        });
+
+        signupBtn.addEventListener('click', async () => {
+            const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+                email: emailInput.value,
+                password: passwordInput.value,
+                options: { data: { username: emailInput.value.split('@')[0] } } // Simple username for test
+            });
+            if (signUpError) console.error('Signup failed:', signUpError.message);
+            else if (user) alert('Check your email for confirmation!');
+        });
+
+        logoutBtn.addEventListener('click', async () => {
+            const { error } = await supabase.auth.signOut();
+            if (error) console.error('Logout failed:', error.message);
+        });
+
+        supabase.auth.onAuthStateChange((event, session) => {
+            console.log("Auth state changed:", event, session ? "Session present" : "No session");
+            updateUI(session);
+        });
+
+        // Initial check on page load using getSession
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            console.log("Initial getSession result:", session ? "Session found" : "No session found");
+            updateUI(session);
+        });
+
+        console.log("Supabase client created successfully.");
+    </script>
 </body>
 </html>
