@@ -1,5 +1,6 @@
 // js/collections.js
-import { supabase } from '/Memory_Map/js/supabaseClient.js';
+//import { supabase } from '/Memory_Map/js/supabaseClient.js';
+import { supabase } from '/Memory_Map/script.js';
 
 let currentCollections = []; // Store collections retrieved from DB
 

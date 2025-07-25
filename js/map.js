@@ -1,5 +1,7 @@
 // js/map.js
-import { supabase } from '/Memory_Map/js/supabaseClient.js';
+//import { supabase } from '/Memory_Map/js/supabaseClient.js';
+import { supabase } from '/Memory_Map/script.js';
+
 import { showMarkerDialog } from '/Memory_Map/js/dialog.js';
 import { loadCollectionsForCurrentUser, getSelectedCollectionIds, resetCollectionSelection } from '/Memory_Map/js/collections.js';
 
