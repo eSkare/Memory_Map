@@ -47,8 +47,7 @@ export function initializeMap() {
 
     try {
         // Set initial view to a more central location or user's last known location
-        // For demonstration, let's use a central European city like Berlin
-        mapInstance = L.map('map').setView([52.52, 13.40], 10); // Default view (Berlin)
+        mapInstance = L.map('map').setView([60.3913, 5.3221], 11); // Initial view: Bergen, Norway
 
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
