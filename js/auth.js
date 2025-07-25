@@ -177,15 +177,15 @@ export function setupAuthUI(mapInstance) {
                 displayUIMessage(`An unexpected error occurred: ${e.message}`, 'error', appMessageDisplay, 0);
             }
 
-            console.log("[AUTH-FINAL] Calling loadMarkersForCurrentUser...");
-            await loadMarkersForCurrentUser();
-            console.log("[AUTH-FINAL] Finished loadMarkersForCurrentUser.");
+            //console.log("[AUTH-FINAL] Calling loadMarkersForCurrentUser...");
+            //await loadMarkersForCurrentUser();
+            //console.log("[AUTH-FINAL] Finished loadMarkersForCurrentUser.");
 
-            console.log("[AUTH-FINAL] Calling loadCollectionsForCurrentUser...");
-            await loadCollectionsForCurrentUser();
-            console.log("[AUTH-FINAL] Finished loadCollectionsForCurrentUser.");
+            //console.log("[AUTH-FINAL] Calling loadCollectionsForCurrentUser...");
+            //await loadCollectionsForCurrentUser();
+            //console.log("[AUTH-FINAL] Finished loadCollectionsForCurrentUser.");
 
-            console.log("[AUTH-FINAL] End of logged-in state logic.");
+            //console.log("[AUTH-FINAL] End of logged-in state logic.");
 
         } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
             console.log('[AUTH-FINAL] Entering logged-out state logic.');
