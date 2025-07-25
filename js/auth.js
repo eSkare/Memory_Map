@@ -209,15 +209,21 @@ export function setupAuthUI(mapInstance) {
                 console.error("[AUTH-WORKAROUND] UNCAUGHT ERROR DURING PROFILE FETCH BLOCK (or timeout):", e.message);
                 displayUIMessage(`An unexpected error occurred: ${e.message}. Attempting to log out.`, 'error', appMessageDisplay, 3000);
 
-                // Add explicit logging for signOut attempt
                 console.log("[AUTH-WORKAROUND] Attempting to force signOut due to error.");
-                const { error: signOutError } = await supabase.auth.signOut();
-                if (signOutError) {
-                    console.error("[AUTH-WORKAROUND] Error during forced signOut:", signOutError.message);
-                    displayUIMessage(`Failed to log out: ${signOutError.message}. Please clear data.`, 'error', appMessageDisplay, 0);
-                } else {
-                    console.log("[AUTH-WORKAROUND] Force signOut completed successfully. Expecting SIGNED_OUT event.");
+                try {
+                    const { error: signOutError } = await supabase.auth.signOut();
+                    console.log("[AUTH-WORKAROUND] signOut promise RESOLVED. Error object:", signOutError); // NEW LOG
+                    if (signOutError) {
+                        console.error("[AUTH-WORKAROUND] Error during forced signOut:", signOutError.message);
+                        displayUIMessage(`Failed to log out: ${signOutError.message}. Please clear data manually.`, 'error', appMessageDisplay, 0);
+                    } else {
+                        console.log("[AUTH-WORKAROUND] Force signOut completed successfully. Expecting SIGNED_OUT event.");
+                    }
+                } catch (signOutCatchError) {
+                    console.error("[AUTH-WORKAROUND] UNCAUGHT ERROR DURING signOut ATTEMPT:", signOutCatchError.message); // NEW LOG
+                    displayUIMessage(`Critial logout error: ${signOutCatchError.message}. Manual data clear required.`, 'error', appMessageDisplay, 0);
                 }
+                // We're not returning here, relying on onAuthStateChange to fire SIGNED_OUT
             }
 
             // Re-enable loading of map markers and collections
