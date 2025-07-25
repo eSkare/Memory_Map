@@ -1,8 +1,9 @@
-// js/script.js - Importing dialog.js
+// js/script.js - Importing dialog.js and map.js
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-// IMPORT DIALOG.JS HERE
 import { showDialog } from '/Memory_Map/js/dialog.js';
+// IMPORT MAP.JS HERE
+import { initializeMap } from '/Memory_Map/js/map.js';
 
 // YOUR PROJECT URL AND ANON KEY (as provided in your test.html)
 const SUPABASE_URL = 'https://szcotkwupwrbawgprkbk.supabase.co';
@@ -20,8 +21,8 @@ const passwordInput = document.getElementById('password');
 const loginBtn = document.getElementById('loginBtn');
 const signupBtn = document.getElementById('signupBtn');
 const logoutBtn = document.getElementById('logoutBtn');
-// Get reference to the new test dialog button
 const testDialogBtn = document.getElementById('testDialogBtn');
+
 
 async function fetchUserProfile(userId) {
     console.log("Attempting to fetch profile for user ID:", userId);
@@ -49,6 +50,10 @@ async function updateUI(session) {
         authContainer.style.display = 'none';
         appContainer.style.display = 'block';
         usernameSpan.textContent = session.user.email; // Set to email initially
+
+        // Initialize the map when the user logs in
+        // IMPORTANT: Call initializeMap here, as the app-container is now visible
+        initializeMap(); 
 
         const profile = await fetchUserProfile(session.user.id);
         if (profile) {
@@ -78,7 +83,7 @@ signupBtn.addEventListener('click', async () => {
         email: emailInput.value,
         password: passwordInput.value,
         options: { data: { username: emailInput.value.split('@')[0] } } // Simple username for test
-    } );
+    });
     if (signUpError) console.error('Signup failed:', signUpError.message);
     else if (user) alert('Check your email for confirmation!');
 });
@@ -88,7 +93,6 @@ logoutBtn.addEventListener('click', async () => {
     if (error) console.error('Logout failed:', error.message);
 });
 
-// EVENT LISTENER FOR THE NEW DIALOG TEST BUTTON
 if (testDialogBtn) {
     testDialogBtn.addEventListener('click', () => {
         showDialog("This is a test message from Dialog.js!");
