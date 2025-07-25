@@ -158,35 +158,58 @@ async function saveMarkerToCollection(name, description, color, lat, lng, collec
     }
 
     try {
-        console.log("[SCRIPT.JS] Inserting marker into Supabase:", { name, description, color, lat, lng, user_id: user.user.id, collection_id: collectionId });
-        const { data: newMarker, error } = await supabase
-            .from('markers') // Using your 'markers' table
+        // 1. Insert the new marker into the 'markers' table
+        console.log("[SCRIPT.JS] Attempting to insert marker into 'markers' table:", {
+            name, description, color, latitude: lat, longitude: lng, user_id: user.user.id
+        });
+        const { data: newMarkerData, error: markerError } = await supabase
+            .from('markers')
             .insert({
                 name: name,
-                description: description,
-                color: color, // Save the selected color
+                description: description, // Now includes description
+                color: color,             // Now includes color
                 latitude: lat,
                 longitude: lng,
-                user_id: user.user.id,
-                collection_id: collectionId
+                user_id: user.user.id
             })
-            .select(); // Select the created row to get its ID etc.
+            .select('id'); // Select only the ID of the newly created marker
 
-        if (error) {
-            console.error("[SCRIPT.JS] Error saving marker:", error.message);
-            showDialog("Error", `Error saving marker: ${error.message}`);
+        if (markerError) {
+            console.error("[SCRIPT.JS] Error saving marker to 'markers' table:", markerError.message);
+            showDialog("Error", `Error saving marker: ${markerError.message}`);
             return;
         }
 
-        console.log("[SCRIPT.JS] Marker saved successfully:", newMarker);
-        showDialog("Success", `Marker "${name}" added to collection!`);
-        
-        // After saving, immediately load and display all markers to show the new one
+        const newMarkerId = newMarkerData[0].id;
+        console.log("[SCRIPT.JS] Marker successfully saved to 'markers' table with ID:", newMarkerId);
+
+        // 2. Insert the relationship into the 'marker_collections' table
+        console.log("[SCRIPT.JS] Attempting to link marker to collection in 'marker_collections':", {
+            marker_id: newMarkerId, collection_id: collectionId
+        });
+        const { error: linkError } = await supabase
+            .from('marker_collections')
+            .insert([
+                { marker_id: newMarkerId, collection_id: collectionId }
+            ]);
+
+        if (linkError) {
+            console.error("[SCRIPT.JS] Error linking marker to collection in 'marker_collections':", linkError.message);
+            // IMPORTANT: If the link fails, you might want to consider deleting the marker just created.
+            // For now, we'll just report the error and leave the marker.
+            showDialog("Error", `Error linking marker to collection: ${linkError.message}`);
+            return;
+        }
+
+        console.log("[SCRIPT.JS] Marker and collection linked successfully.");
+        showDialog("Success", `Marker "${name}" added and linked to collection!`);
+
+        // After saving and linking, immediately reload and display all markers to show the new one
         await loadAndDisplayAllMarkers();
 
     } catch (e) {
-        console.error("[SCRIPT.JS] Uncaught error saving marker:", e.message);
-        showDialog("Error", `An unexpected error occurred while saving marker: ${e.message}`);
+        console.error("[SCRIPT.JS] Uncaught error during marker saving or linking process:", e.message);
+        showDialog("Error", `An unexpected error occurred: ${e.message}`);
     }
 }
 
