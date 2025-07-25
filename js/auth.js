@@ -1,8 +1,8 @@
-// js/auth.js - WORKAROUND VERSION (DISPLAY EMAIL FALLBACK)
+// js/auth.js - TEMPORARY DEBUG VERSION
 
 import { supabase } from '/Memory_Map/js/supabaseClient.js';
-import { loadMarkersForCurrentUser } from '/Memory_Map/js/map.js'; // Re-enabling map functions
-import { clearCollectionsUI, resetCollectionSelection, loadCollectionsForCurrentUser } from '/Memory_Map/js/collections.js'; // Re-enabling collection functions
+import { loadMarkersForCurrentUser } from '/Memory_Map/js/map.js';
+import { clearCollectionsUI, resetCollectionSelection, loadCollectionsForCurrentUser } from '/Memory_Map/js/collections.js';
 
 // Get references to your message display elements
 const authMessageDisplay = document.getElementById('message-display');
@@ -43,12 +43,11 @@ const signupPasswordInput = document.getElementById('signup-password');
 const signupUsernameInput = document.getElementById('signup-username');
 const signupButton = document.getElementById('signup-button');
 
-const currentUserSpan = document.getElementById('current-username'); // Re-enable this
+const currentUserSpan = document.getElementById('current-username');
 const logoutButton = document.getElementById('logout-button');
 
 
 export function setupAuthUI(mapInstance) {
-    // Event listeners for login/signup forms (unchanged from previous versions)
     showSignupBtn.addEventListener('click', (e) => {
         e.preventDefault();
         loginForm.style.display = 'none';
@@ -119,12 +118,10 @@ export function setupAuthUI(mapInstance) {
         }
     });
 
-
     // --- WORKAROUND: onAuthStateChange listener with immediate email fallback and background profile fetch ---
-    supabase.auth.onAuthStateChange(async (event, session) => { // Keep async here for the profile fetch
-        console.log(`[WORKAROUND onAuthStateChange] Auth state changed! Event: ${event}. Session: ${session ? 'Object Present' : 'Null'}`);
+    supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log(`[AUTH-DEBUG] Auth state changed! Event: ${event}. Session: ${session ? 'Object Present' : 'Null'}`);
 
-        // Clear messages for state transitions
         if (event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) {
             clearUIMessage(authMessageDisplay);
         } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
@@ -132,87 +129,98 @@ export function setupAuthUI(mapInstance) {
         }
 
         if (session) {
-            console.log("[WORKAROUND] Entering logged-in state logic.");
+            console.log("[AUTH-DEBUG] Entering logged-in state logic.");
             authContainer.style.display = 'none';
             appContainer.style.display = 'block';
 
-            if (mapInstance) { // Ensure mapInstance was successfully passed and is valid
-                setTimeout(() => { // Use a small timeout to ensure DOM is rendered before resizing
+            if (mapInstance) {
+                setTimeout(() => {
                     mapInstance.invalidateSize();
-                    console.log("[WORKAROUND] mapInstance.invalidateSize() called.");
-                }, 100); // A small delay (e.g., 100ms) can help ensure the CSS has been applied
+                    console.log("[AUTH-DEBUG] mapInstance.invalidateSize() called.");
+                }, 100);
             }
 
-            // --- WORKAROUND START: Display email as immediate fallback ---
-            if (currentUserSpan) { // Ensure currentUserSpan exists before trying to update it
-                currentUserSpan.textContent = session.user.email || 'Logged In User'; // Fallback to email or generic text
-                console.log(`[WORKAROUND] currentUserSpan immediately set to: ${currentUserSpan.textContent}`);
+            if (currentUserSpan) {
+                currentUserSpan.textContent = session.user.email || 'Logged In User';
+                console.log(`[AUTH-DEBUG] currentUserSpan immediately set to: ${currentUserSpan.textContent}`);
             }
-            // --- WORKAROUND END ---
 
-            // Now, attempt to fetch the profile in the background
+            // Attempt to fetch the profile in the background
             try {
-                console.log("[WORKAROUND] Supabase client object status:", supabase ? 'Available' : 'NOT AVAILABLE');
+                console.log("[AUTH-DEBUG] Supabase client object status:", supabase ? 'Available' : 'NOT AVAILABLE');
 
                 if (!supabase) {
-                    console.error("[WORKAROUND] Supabase client is not initialized!");
+                    console.error("[AUTH-DEBUG] Supabase client is not initialized!");
                     displayUIMessage("An internal error occurred (Supabase client not initialized).", 'error', appMessageDisplay, 0);
                     return;
                 }
 
-                console.log("[WORKAROUND] Attempting to fetch profile for user ID:", session.user.id);
+                console.log("[AUTH-DEBUG] Attempting to fetch profile (TEMPORARY simplified query) for user ID:", session.user.id);
 
+                // --- TEMPORARY DEBUG CHANGE: Simplified profile fetch ---
                 const { data: profile, error: profileFetchError } = await supabase
                     .from('profiles')
-                    .select('username')
-                    .eq('id', session.user.id)
-                    .single(); // <--- Execution seems to halt around here in your logs
+                    .select('id, username'); // <-- Fetching all profiles to see if the query itself is the issue
 
-                console.log("[WORKAROUND] AFTER PROFILE SINGLE CALL. Profile data:", profile, "Error:", profileFetchError); // NEW LOG HERE
+                console.log("[AUTH-DEBUG] AFTER SIMPLIFIED PROFILE FETCH. Raw data:", profile, "Error:", profileFetchError); // CRITICAL NEW LOG
 
-                if (profile && currentUserSpan) { // Update if profile and span exist
-                    console.log("[WORKAROUND] PROFILE FETCH SUCCESS: Profile data received:", profile);
-                    currentUserSpan.textContent = profile.username; // Update to username if successful
-                    console.log(`[WORKAROUND] currentUserSpan updated to: ${profile.username}`);
-                    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-                        // Only show welcome message on initial sign-in/refresh, not subsequent re-renders
-                        displayUIMessage(`Welcome back, ${profile.username}!`, 'success', appMessageDisplay, 3000);
+                if (profileFetchError) {
+                    console.error("[AUTH-DEBUG] ERROR FETCHING PROFILES:", profileFetchError?.message);
+                    displayUIMessage(`Error fetching profiles: ${profileFetchError?.message}`, 'error', appMessageDisplay, 0);
+                } else if (profile && profile.length > 0) {
+                    const userProfile = profile.find(p => p.id === session.user.id); // Find the specific user's profile
+                    if (userProfile && currentUserSpan) {
+                        console.log("[AUTH-DEBUG] SPECIFIC PROFILE FOUND. Username:", userProfile.username);
+                        currentUserSpan.textContent = userProfile.username;
+                        displayUIMessage(`Welcome back, ${userProfile.username}!`, 'success', appMessageDisplay, 3000);
+                    } else {
+                        console.warn("[AUTH-DEBUG] USER PROFILE NOT FOUND IN SIMPLIFIED FETCH RESULT. Proceeding to create...");
+                        // This indicates no profile exists for the current user, or RLS is blocking even a general select
+                        // Proceed to profile creation logic
+                        const usernameToUse = session.user.user_metadata?.username || (session.user.email ? session.user.email.split('@')[0] : 'UnknownUser');
+                        const { error: createProfileError } = await supabase.from('profiles').insert({ id: session.user.id, username: usernameToUse });
+                        if (createProfileError) {
+                            console.error("[AUTH-DEBUG] FAILED TO CREATE PROFILE:", createProfileError.message);
+                            displayUIMessage("Profile creation failed.", 'error', appMessageDisplay, 0);
+                        } else {
+                            console.log("[AUTH-DEBUG] Profile created successfully for user:", usernameToUse);
+                            if (currentUserSpan) currentUserSpan.textContent = usernameToUse;
+                            displayUIMessage(`Profile created. Welcome, ${usernameToUse}!`, 'success', appMessageDisplay, 3000);
+                        }
                     }
-                } else if (profileFetchError && profileFetchError.message.includes('rows returned')) {
-                    console.warn("[WORKAROUND] PROFILE NOT FOUND (0 rows returned from RLS). Attempting to create one...");
+                } else {
+                    console.warn("[AUTH-DEBUG] NO PROFILES FOUND AT ALL. Attempting to create one...");
+                    // This scenario means no profiles exist or RLS blocked everything.
                     const usernameToUse = session.user.user_metadata?.username || (session.user.email ? session.user.email.split('@')[0] : 'UnknownUser');
                     const { error: createProfileError } = await supabase.from('profiles').insert({ id: session.user.id, username: usernameToUse });
                     if (createProfileError) {
-                        console.error("[WORKAROUND] FAILED TO CREATE PROFILE:", createProfileError.message);
+                        console.error("[AUTH-DEBUG] FAILED TO CREATE PROFILE:", createProfileError.message);
                         displayUIMessage("Profile creation failed.", 'error', appMessageDisplay, 0);
                     } else {
-                        console.log("[WORKAROUND] Profile created successfully.");
-                        if (currentUserSpan) currentUserSpan.textContent = usernameToUse; // Update to new username
+                        console.log("[AUTH-DEBUG] Profile created successfully for user:", usernameToUse);
+                        if (currentUserSpan) currentUserSpan.textContent = usernameToUse;
                         displayUIMessage(`Profile created. Welcome, ${usernameToUse}!`, 'success', appMessageDisplay, 3000);
                     }
-                } else if (profileFetchError) {
-                    console.error("[WORKAROUND] ERROR FETCHING PROFILE (Other reason):", profileFetchError?.message);
-                    displayUIMessage(`Error fetching profile: ${profileFetchError?.message}`, 'error', appMessageDisplay, 0);
                 }
             } catch (e) {
-                console.error("[WORKAROUND] UNCAUGHT ERROR DURING PROFILE FETCH BLOCK:", e);
+                console.error("[AUTH-DEBUG] UNCAUGHT ERROR DURING PROFILE FETCH BLOCK:", e);
                 displayUIMessage(`An unexpected error occurred: ${e.message}`, 'error', appMessageDisplay, 0);
             }
 
             // Re-enable loading of map markers and collections
-            console.log("[WORKAROUND] Calling loadMarkersForCurrentUser...");
+            console.log("[AUTH-DEBUG] Calling loadMarkersForCurrentUser...");
             await loadMarkersForCurrentUser(); // Use await as it's an async function
-            console.log("[WORKAROUND] Finished loadMarkersForCurrentUser.");
+            console.log("[AUTH-DEBUG] Finished loadMarkersForCurrentUser.");
 
-            console.log("[WORKAROUND] Calling loadCollectionsForCurrentUser...");
+            console.log("[AUTH-DEBUG] Calling loadCollectionsForCurrentUser...");
             await loadCollectionsForCurrentUser(); // Use await as it's an async function
-            console.log("[WORKAROUND] Finished loadCollectionsForCurrentUser.");
+            console.log("[AUTH-DEBUG] Finished loadCollectionsForCurrentUser.");
 
-            console.log("[WORKAROUND] End of logged-in state logic.");
+            console.log("[AUTH-DEBUG] End of logged-in state logic.");
 
         } else {
             // User is logged out
-            console.log('[WORKAROUND] Entering logged-out state logic.');
+            console.log('[AUTH-DEBUG] Entering logged-out state logic.');
             authContainer.style.display = 'block';
             appContainer.style.display = 'none';
             if (currentUserSpan) currentUserSpan.textContent = 'Guest';
@@ -221,16 +229,15 @@ export function setupAuthUI(mapInstance) {
             // Clear map layers and collections UI
             if (mapInstance && mapInstance.eachLayer) {
                 mapInstance.eachLayer(function (layer) {
-                    // Assuming you only want to remove markers/popups, not base map tiles
-                    if (layer._icon || layer._path || layer._popup) { // _popup for popup layers
+                    if (layer._icon || layer._path || layer._popup) {
                         mapInstance.removeLayer(layer);
                     }
                 });
             }
             clearCollectionsUI();
             resetCollectionSelection();
-            console.log("[WORKAROUND] Completed logged-out state logic.");
+            console.log("[AUTH-DEBUG] Completed logged-out state logic.");
         }
     });
-    console.log("Auth setup complete (WORKAROUND version).");
+    console.log("Auth setup complete (TEMPORARY DEBUG VERSION).");
 }
