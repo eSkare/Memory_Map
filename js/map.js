@@ -1,13 +1,8 @@
 // js/map.js - Updated to use global L (from index.html script tag)
 
-// REMOVE THIS LINE:
-// import 'https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js';
+// NO import statement for Leaflet here!
 
 console.log("[MAP.JS] map.js loaded successfully.");
-
-// We no longer need to explicitly get L from window.L here,
-// as the global L should be available directly after the <script> tag loads it.
-// Remove the 'const Leaflet = window.L;' line and the check for it.
 
 let mapInstance = null; // To store the map instance
 
@@ -26,7 +21,7 @@ export function initializeMap() {
     }
 
     try {
-        // Now, L should be globally available from the script tag in index.html
+        // L should be globally available from the script tag in index.html
         mapInstance = L.map('map').setView([51.505, -0.09], 13); // Default view (London)
 
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
