@@ -1,6 +1,9 @@
 // js/auth.js - CLEAN VERSION
 
-import { supabase } from '/Memory_Map/js/supabaseClient.js';
+//import { supabase } from '/Memory_Map/js/supabaseClient.js';
+import { supabase } from '/Memory_Map/script.js'; // Import supabase from script.js now
+
+
 import { loadMarkersForCurrentUser } from '/Memory_Map/js/map.js';
 import { clearCollectionsUI, resetCollectionSelection, loadCollectionsForCurrentUser } from '/Memory_Map/js/collections.js';
 
