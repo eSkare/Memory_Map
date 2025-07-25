@@ -1,8 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Supabase Test</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
+    <title>Memory Map</title>
+    <!-- Add Leaflet CSS (without integrity for now, as that's what works for you) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous">
+    <!-- Add your own style.css here if you have one -->
+    <!-- <link rel="stylesheet" href="style.css"> -->
     <style>
         /* Basic styling for the map to make it visible */
         #map {
@@ -11,11 +14,38 @@
             margin-top: 20px;
             border: 1px solid #ccc;
         }
+        /* Basic styling for collections section */
+        #collections-container {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        #collections-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .collection-item {
+            background-color: #e0e0e0;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .collection-item.selected {
+            background-color: #007bff;
+            color: white;
+        }
     </style>
 </head>
 <body>
-    <h1>Supabase Test App</h1>
+    <h1>Memory Map! 🗺️</h1>
+    <p>A place to store your favorite locations📍</p>
     
+    <!-- Auth Container -->
     <div id="auth-container">
         <h2>Login / Signup</h2>
         <input type="email" id="email" placeholder="Email">
@@ -24,6 +54,7 @@
         <button id="signupBtn">Sign Up</button>
     </div>
 
+    <!-- App Container (Visible after login) -->
     <div id="app-container" style="display: none;">
         <h2>Welcome, <span id="usernameSpan"></span>!</h2>
         <button id="logoutBtn">Logout</button>
@@ -32,15 +63,33 @@
         <hr>
         <button id="testDialogBtn">Test Dialog</button>
         <hr>
+        <!-- Map Container -->
         <div id="map"></div>
+        <hr>
+        <!-- Collections Container -->
+        <div id="collections-container">
+            <h3>Your Collections</h3>
+            <div id="collections-list">
+                <!-- Collections will be loaded here -->
+            </div>
+            <input type="text" id="new-collection-name" placeholder="New collection name">
+            <button id="create-collection-btn">Create Collection</button>
+        </div>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet JavaScript (without integrity) -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
+    <!-- Your main application script -->
     <script src="/Memory_Map/js/script.js" type="module" defer></script>
     
+    <!-- Link the dialog.js module -->
     <script src="/Memory_Map/js/dialog.js" type="module" defer></script>
     
+    <!-- Link the map.js module -->
     <script src="/Memory_Map/js/map.js" type="module" defer></script>
+
+    <!-- Link the collections.js module -->
+    <script src="/Memory_Map/js/collections.js" type="module" defer></script>
 </body>
 </html>

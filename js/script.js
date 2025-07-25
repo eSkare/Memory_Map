@@ -2,8 +2,8 @@
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { showDialog } from '/Memory_Map/js/dialog.js';
-// IMPORT MAP.JS HERE
 import { initializeMap } from '/Memory_Map/js/map.js';
+import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection } from '/Memory_Map/js/collections.js';
 
 // YOUR PROJECT URL AND ANON KEY (as provided in your test.html)
 const SUPABASE_URL = 'https://szcotkwupwrbawgprkbk.supabase.co';
@@ -52,7 +52,6 @@ async function updateUI(session) {
         usernameSpan.textContent = session.user.email; // Set to email initially
 
         // Initialize the map when the user logs in
-        // IMPORTANT: Call initializeMap here, as the app-container is now visible
         initializeMap(); 
 
         const profile = await fetchUserProfile(session.user.id);
@@ -62,11 +61,21 @@ async function updateUI(session) {
         } else {
             profileData.textContent = "Profile not found or error fetching.";
         }
+
+        // Load collections for the current user
+        console.log("[SCRIPT.JS] Calling loadCollectionsForCurrentUser...");
+        await loadCollectionsForCurrentUser(supabase); // Pass supabase instance
+        console.log("[SCRIPT.JS] Finished loadCollectionsForCurrentUser.");
+
     } else {
+        // User is logged out
         authContainer.style.display = 'block';
         appContainer.style.display = 'none';
         usernameSpan.textContent = 'Guest';
-        profileData.textContent = '';
+        profileData.textContent = ''; // Clear profile data
+        // Clear collections UI on logout
+        clearCollectionsUI();
+        resetCollectionSelection();
     }
 }
 
