@@ -1,11 +1,11 @@
-// js/auth.js - CLEAN VERSION
+// js/auth.js - DIAGNOSTIC VERSION (True Auth Isolation)
 
-//import { supabase } from '/Memory_Map/js/supabaseClient.js';
-import { supabase } from '/Memory_Map/script.js'; // Import supabase from script.js now
+// Import supabase from script.js
+import { supabase } from '/Memory_Map/script.js';
 
-
-import { loadMarkersForCurrentUser } from '/Memory_Map/js/map.js';
-import { clearCollectionsUI, resetCollectionSelection, loadCollectionsForCurrentUser } from '/Memory_Map/js/collections.js';
+// IMPORTANT: Comment out ALL other module imports for this diagnostic phase
+// import { loadMarkersForCurrentUser } from '/Memory_Map/js/map.js';
+// import { clearCollectionsUI, resetCollectionSelection, loadCollectionsForCurrentUser } from '/Memory_Map/js/collections.js';
 
 // Get references to your message display elements
 const authMessageDisplay = document.getElementById('message-display');
@@ -50,7 +50,7 @@ const currentUserSpan = document.getElementById('current-username');
 const logoutButton = document.getElementById('logout-button');
 
 
-export function setupAuthUI(mapInstance) {
+export function setupAuthUI(mapInstance) { // mapInstance is passed as null for this test
     showSignupBtn.addEventListener('click', (e) => {
         e.preventDefault();
         loginForm.style.display = 'none';
@@ -130,6 +130,7 @@ export function setupAuthUI(mapInstance) {
             authContainer.style.display = 'none';
             appContainer.style.display = 'block';
 
+            // IMPORTANT: mapInstance will be null here, so this check avoids errors.
             if (mapInstance) {
                 setTimeout(() => {
                     mapInstance.invalidateSize();
@@ -180,6 +181,7 @@ export function setupAuthUI(mapInstance) {
                 displayUIMessage(`An unexpected error occurred: ${e.message}`, 'error', appMessageDisplay, 0);
             }
 
+            // IMPORTANT: Ensure these map/collections calls are commented out!
             //console.log("[AUTH-FINAL] Calling loadMarkersForCurrentUser...");
             //await loadMarkersForCurrentUser();
             //console.log("[AUTH-FINAL] Finished loadMarkersForCurrentUser.");
@@ -198,16 +200,17 @@ export function setupAuthUI(mapInstance) {
             if (currentUserSpan) currentUserSpan.textContent = 'Guest';
             displayUIMessage('You are currently a guest.', 'warning', authMessageDisplay, 3000);
 
-            // Clear map layers and collections UI
-            if (mapInstance && mapInstance.eachLayer) {
+            // IMPORTANT: Ensure these map/collections calls are commented out!
+            if (mapInstance && mapInstance.eachLayer) { // mapInstance is null here
                 mapInstance.eachLayer(function (layer) {
                     if (layer._icon || layer._path || layer._popup) {
                         mapInstance.removeLayer(layer);
                     }
                 });
             }
-            clearCollectionsUI();
-            resetCollectionSelection();
+            // IMPORTANT: Comment out these calls too!
+            // clearCollectionsUI();
+            // resetCollectionSelection();
             console.log("[AUTH-FINAL] Completed logged-out state logic.");
         }
     });
