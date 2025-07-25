@@ -21,7 +21,7 @@ const passwordInput = document.getElementById('password');
 const loginBtn = document.getElementById('loginBtn');
 const signupBtn = document.getElementById('signupBtn');
 const logoutBtn = document.getElementById('logoutBtn');
-const testDialogBtn = document = document.getElementById('testDialogBtn');
+const testDialogBtn = document.getElementById('testDialogBtn');
 
 // Get elements for collection creation
 const newCollectionNameInput = document.getElementById('new-collection-name');
