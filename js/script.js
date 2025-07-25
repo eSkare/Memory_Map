@@ -1,15 +1,15 @@
-// js/script.js - Importing dialog.js and map.js
+// js/script.js - Exporting supabase and setting up collection creation button
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { showDialog } from '/Memory_Map/js/dialog.js';
 import { initializeMap } from '/Memory_Map/js/map.js';
-import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection } from '/Memory_Map/js/collections.js';
+import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection, handleCreateCollection } from '/Memory_Map/js/collections.js'; // Ensure handleCreateCollection is imported
 
-// YOUR PROJECT URL AND ANON KEY (as provided in your test.html)
+// YOUR PROJECT URL AND ANON KEY
 const SUPABASE_URL = 'https://szcotkwupwrbawgprkbk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6Y290a3d1cHdyYmF3Z3Bya2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzNTEyNDcsImV4cCI6MjA2ODkyNzI0N30.e-cQbi9lt803sGD-SUItopcE6WgmYcxLFgPsGFp32zI';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY); // EXPORT supabase client
 console.log("Supabase client created successfully from external script.");
 
 const authContainer = document.getElementById('auth-container');
@@ -21,8 +21,11 @@ const passwordInput = document.getElementById('password');
 const loginBtn = document.getElementById('loginBtn');
 const signupBtn = document.getElementById('signupBtn');
 const logoutBtn = document.getElementById('logoutBtn');
-const testDialogBtn = document.getElementById('testDialogBtn');
+const testDialogBtn = document = document.getElementById('testDialogBtn');
 
+// Get elements for collection creation
+const newCollectionNameInput = document.getElementById('new-collection-name');
+const createCollectionBtn = document.getElementById('create-collection-btn');
 
 async function fetchUserProfile(userId) {
     console.log("Attempting to fetch profile for user ID:", userId);
@@ -49,31 +52,27 @@ async function updateUI(session) {
     if (session) {
         authContainer.style.display = 'none';
         appContainer.style.display = 'block';
-        usernameSpan.textContent = session.user.email; // Set to email initially
+        usernameSpan.textContent = session.user.email;
 
-        // Initialize the map when the user logs in
-        initializeMap(); 
+        initializeMap();
 
         const profile = await fetchUserProfile(session.user.id);
         if (profile) {
-            usernameSpan.textContent = profile.username; // Update to username if fetched
+            usernameSpan.textContent = profile.username;
             profileData.textContent = JSON.stringify(profile, null, 2);
         } else {
             profileData.textContent = "Profile not found or error fetching.";
         }
 
-        // Load collections for the current user
         console.log("[SCRIPT.JS] Calling loadCollectionsForCurrentUser...");
-        await loadCollectionsForCurrentUser(supabase); // Pass supabase instance
+        await loadCollectionsForCurrentUser(); // No longer pass supabase as it's imported
         console.log("[SCRIPT.JS] Finished loadCollectionsForCurrentUser.");
 
     } else {
-        // User is logged out
         authContainer.style.display = 'block';
         appContainer.style.display = 'none';
         usernameSpan.textContent = 'Guest';
-        profileData.textContent = ''; // Clear profile data
-        // Clear collections UI on logout
+        profileData.textContent = '';
         clearCollectionsUI();
         resetCollectionSelection();
     }
@@ -91,7 +90,7 @@ signupBtn.addEventListener('click', async () => {
     const { data: { user }, error: signUpError } = await supabase.auth.signUp({
         email: emailInput.value,
         password: passwordInput.value,
-        options: { data: { username: emailInput.value.split('@')[0] } } // Simple username for test
+        options: { data: { username: emailInput.value.split('@')[0] } }
     });
     if (signUpError) console.error('Signup failed:', signUpError.message);
     else if (user) alert('Check your email for confirmation!');
@@ -108,13 +107,19 @@ if (testDialogBtn) {
     });
 }
 
+// Attach the create collection handler from collections.js
+if (createCollectionBtn && newCollectionNameInput) {
+    createCollectionBtn.addEventListener('click', () => {
+        handleCreateCollection(newCollectionNameInput.value.trim()); // Call the exported function
+    });
+}
+
 
 supabase.auth.onAuthStateChange((event, session) => {
     console.log("Auth state changed:", event, session ? "Session present" : "No session");
     updateUI(session);
 });
 
-// Initial check on page load using getSession
 supabase.auth.getSession().then(({ data: { session } }) => {
     console.log("Initial getSession result:", session ? "Session found" : "No session found");
     updateUI(session);
