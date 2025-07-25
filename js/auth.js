@@ -145,8 +145,8 @@ export function setupAuthUI(mapInstance) {
 
             // --- WORKAROUND START: Display email as immediate fallback ---
             if (currentUserSpan) { // Ensure currentUserSpan exists before trying to update it
-                 currentUserSpan.textContent = session.user.email || 'Logged In User'; // Fallback to email or generic text
-                 console.log(`[WORKAROUND] currentUserSpan immediately set to: ${currentUserSpan.textContent}`);
+                currentUserSpan.textContent = session.user.email || 'Logged In User'; // Fallback to email or generic text
+                console.log(`[WORKAROUND] currentUserSpan immediately set to: ${currentUserSpan.textContent}`);
             }
             // --- WORKAROUND END ---
 
@@ -166,24 +166,20 @@ export function setupAuthUI(mapInstance) {
                     .from('profiles')
                     .select('username')
                     .eq('id', session.user.id)
-                    .single();
+                    .single(); // <--- Execution seems to halt around here in your logs
 
-                // --- CRITICAL DEBUG LOGS (Still keeping for any future insight) ---
-                console.log("[WORKAROUND] Profile fetch await resolved. Profile:", profile, "Error:", profileFetchError);
-                // The alert is removed here to reduce obtrusiveness, but you can put it back if you want.
-                // alert("[WORKAROUND] Await resolved! Profile: " + (profile ? profile.username : 'NULL') + ", Error: " + (profileFetchError ? profileFetchError.message : 'NULL'));
-                // --- END CRITICAL DEBUG LOGS ---
+                console.log("[WORKAROUND] AFTER PROFILE SINGLE CALL. Profile data:", profile, "Error:", profileFetchError); // NEW LOG HERE
 
                 if (profile && currentUserSpan) { // Update if profile and span exist
                     console.log("[WORKAROUND] PROFILE FETCH SUCCESS: Profile data received:", profile);
                     currentUserSpan.textContent = profile.username; // Update to username if successful
                     console.log(`[WORKAROUND] currentUserSpan updated to: ${profile.username}`);
                     if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-                         // Only show welcome message on initial sign-in/refresh, not subsequent re-renders
-                         displayUIMessage(`Welcome back, ${profile.username}!`, 'success', appMessageDisplay, 3000);
+                        // Only show welcome message on initial sign-in/refresh, not subsequent re-renders
+                        displayUIMessage(`Welcome back, ${profile.username}!`, 'success', appMessageDisplay, 3000);
                     }
                 } else if (profileFetchError && profileFetchError.message.includes('rows returned')) {
-                    console.warn("[WORKAROUND] PROFILE NOT FOUND: Attempting to create one...");
+                    console.warn("[WORKAROUND] PROFILE NOT FOUND (0 rows returned from RLS). Attempting to create one...");
                     const usernameToUse = session.user.user_metadata?.username || (session.user.email ? session.user.email.split('@')[0] : 'UnknownUser');
                     const { error: createProfileError } = await supabase.from('profiles').insert({ id: session.user.id, username: usernameToUse });
                     if (createProfileError) {
@@ -204,8 +200,13 @@ export function setupAuthUI(mapInstance) {
             }
 
             // Re-enable loading of map markers and collections
-            loadMarkersForCurrentUser();
-            loadCollectionsForCurrentUser();
+            console.log("[WORKAROUND] Calling loadMarkersForCurrentUser...");
+            await loadMarkersForCurrentUser(); // Use await as it's an async function
+            console.log("[WORKAROUND] Finished loadMarkersForCurrentUser.");
+
+            console.log("[WORKAROUND] Calling loadCollectionsForCurrentUser...");
+            await loadCollectionsForCurrentUser(); // Use await as it's an async function
+            console.log("[WORKAROUND] Finished loadCollectionsForCurrentUser.");
 
             console.log("[WORKAROUND] End of logged-in state logic.");
 
