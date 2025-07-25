@@ -1,15 +1,15 @@
-// js/script.js - Exporting supabase and setting up collection creation button
+// js/script.js - Handle map clicks for adding markers and saving to Supabase
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { showDialog } from '/Memory_Map/js/dialog.js';
-import { initializeMap } from '/Memory_Map/js/map.js';
-import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection, handleCreateCollection } from '/Memory_Map/js/collections.js'; // Ensure handleCreateCollection is imported
+import { initializeMap, setMapClickCallback } from '/Memory_Map/js/map.js'; // Import setMapClickCallback
+import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection, handleCreateCollection, getSelectedCollectionId } from '/Memory_Map/js/collections.js'; // Import getSelectedCollectionId
 
 // YOUR PROJECT URL AND ANON KEY
 const SUPABASE_URL = 'https://szcotkwupwrbawgprkbk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6Y290a3d1cHdyYmF3Z3Bya2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzNTEyNDcsImV4cCI6MjA2ODkyNzI0N30.e-cQbi9lt803sGD-SUItopcE6WgmYcxLFgPsGFp32zI';
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY); // EXPORT supabase client
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY); // Export Supabase client
 console.log("Supabase client created successfully from external script.");
 
 const authContainer = document.getElementById('auth-container');
@@ -23,7 +23,6 @@ const signupBtn = document.getElementById('signupBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 const testDialogBtn = document.getElementById('testDialogBtn');
 
-// Get elements for collection creation
 const newCollectionNameInput = document.getElementById('new-collection-name');
 const createCollectionBtn = document.getElementById('create-collection-btn');
 
@@ -48,6 +47,75 @@ async function fetchUserProfile(userId) {
     }
 }
 
+// NEW FUNCTION: Handle map clicks for adding markers
+async function handleMapClick(lat, lng) {
+    console.log("[SCRIPT.JS] Map clicked at:", lat, lng);
+
+    const selectedCollectionId = getSelectedCollectionId();
+    if (!selectedCollectionId) {
+        showDialog("Please select a collection first or create a new one to add a marker.");
+        return;
+    }
+
+    const markerName = await showDialog("Enter marker name:", { type: 'prompt' });
+    if (!markerName) {
+        showDialog("Marker creation cancelled.");
+        return;
+    }
+
+    const markerDescription = await showDialog("Enter marker description (optional):", { type: 'prompt' });
+
+    console.log("[SCRIPT.JS] Preparing to save marker:", {
+        name: markerName,
+        description: markerDescription,
+        lat, lng,
+        collectionId: selectedCollectionId
+    });
+
+    // Call function to save the marker to Supabase
+    await saveMarkerToCollection(markerName, markerDescription, lat, lng, selectedCollectionId);
+}
+
+// NEW FUNCTION: Save marker to Supabase
+async function saveMarkerToCollection(name, description, lat, lng, collectionId) {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user || !user.user) {
+        console.error("[SCRIPT.JS] Cannot save marker: No authenticated user.");
+        showDialog("You must be logged in to save markers.");
+        return;
+    }
+
+    try {
+        console.log("[SCRIPT.JS] Inserting marker into Supabase:", { name, description, lat, lng, user_id: user.user.id, collection_id: collectionId });
+        const { data: newMarker, error } = await supabase
+            .from('markers') // Using your 'markers' table
+            .insert({
+                name: name,
+                description: description,
+                latitude: lat,
+                longitude: lng,
+                user_id: user.user.id,
+                collection_id: collectionId
+            })
+            .select(); // Select the created row to get its ID etc.
+
+        if (error) {
+            console.error("[SCRIPT.JS] Error saving marker:", error.message);
+            showDialog(`Error saving marker: ${error.message}`);
+            return;
+        }
+
+        console.log("[SCRIPT.JS] Marker saved successfully:", newMarker);
+        showDialog(`Marker "${name}" added to collection!`);
+        // TODO: The next step will be to display this marker on the map visually
+        // For now, it's just saved to the database.
+    } catch (e) {
+        console.error("[SCRIPT.JS] Uncaught error saving marker:", e.message);
+        showDialog(`An unexpected error occurred while saving marker: ${e.message}`);
+    }
+}
+
+
 async function updateUI(session) {
     if (session) {
         authContainer.style.display = 'none';
@@ -55,6 +123,7 @@ async function updateUI(session) {
         usernameSpan.textContent = session.user.email;
 
         initializeMap();
+        setMapClickCallback(handleMapClick); // SET THE MAP CLICK CALLBACK HERE
 
         const profile = await fetchUserProfile(session.user.id);
         if (profile) {
@@ -65,7 +134,7 @@ async function updateUI(session) {
         }
 
         console.log("[SCRIPT.JS] Calling loadCollectionsForCurrentUser...");
-        await loadCollectionsForCurrentUser(); // No longer pass supabase as it's imported
+        await loadCollectionsForCurrentUser();
         console.log("[SCRIPT.JS] Finished loadCollectionsForCurrentUser.");
 
     } else {
@@ -110,7 +179,7 @@ if (testDialogBtn) {
 // Attach the create collection handler from collections.js
 if (createCollectionBtn && newCollectionNameInput) {
     createCollectionBtn.addEventListener('click', () => {
-        handleCreateCollection(newCollectionNameInput.value.trim()); // Call the exported function
+        handleCreateCollection(newCollectionNameInput.value.trim());
     });
 }
 

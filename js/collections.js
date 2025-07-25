@@ -1,15 +1,18 @@
-// js/collections.js - Implement collection creation using Supabase
+// js/collections.js - Exporting selected collection ID
 
-import { supabase } from '/Memory_Map/js/script.js'; // IMPORT supabase instance from script.js
+import { supabase } from '/Memory_Map/js/script.js'; // Import supabase instance
 
 console.log("[COLLECTIONS.JS] collections.js loaded successfully.");
 
 const collectionsListContainer = document.getElementById('collections-list');
-// newCollectionNameInput and createCollectionBtn are now used for event handling in script.js,
-// but we keep their IDs in mind for direct access if needed, or if element is needed for clearing input.
 
 let currentCollections = [];
-let selectedCollectionId = null;
+let selectedCollectionId = null; // To track which collection is active
+
+// Export function to get the currently selected collection ID
+export function getSelectedCollectionId() {
+    return selectedCollectionId;
+}
 
 export function renderCollections(collections) {
     console.log("[COLLECTIONS.JS] renderCollections called with:", collections);
@@ -32,11 +35,13 @@ export function renderCollections(collections) {
         }
 
         div.addEventListener('click', () => {
+            // Toggle selection
             if (selectedCollectionId === collection.id) {
                 selectedCollectionId = null;
                 div.classList.remove('selected');
                 console.log("[COLLECTIONS.JS] Collection deselected:", collection.name);
             } else {
+                // Deselect previous
                 const prevSelected = collectionsListContainer.querySelector('.collection-item.selected');
                 if (prevSelected) {
                     prevSelected.classList.remove('selected');
@@ -46,6 +51,7 @@ export function renderCollections(collections) {
                 console.log("[COLLECTIONS.JS] Collection selected:", collection.name);
             }
             // In a full app, this would trigger re-rendering markers for this collection
+            // For now, it just updates the selection
         });
         collectionsListContainer.appendChild(div);
     });
@@ -70,7 +76,6 @@ export function resetCollectionSelection() {
 
 export async function loadCollectionsForCurrentUser() {
     console.log("[COLLECTIONS.JS] loadCollectionsForCurrentUser called.");
-    // Supabase is now imported directly
     const { data: user } = await supabase.auth.getUser();
     if (!user || !user.user) {
         console.warn("[COLLECTIONS.JS] No authenticated user found for loading collections.");
@@ -100,7 +105,6 @@ export async function loadCollectionsForCurrentUser() {
     }
 }
 
-// NEW FUNCTION: Handles the creation of a new collection in Supabase
 export async function handleCreateCollection(collectionName) {
     if (!collectionName) {
         alert("Collection name cannot be empty.");
@@ -120,9 +124,9 @@ export async function handleCreateCollection(collectionName) {
         const { data, error } = await supabase
             .from('collections')
             .insert([
-                { name: collectionName, user_id: user.user.id } // Ensure 'user_id' matches your table schema
+                { name: collectionName, user_id: user.user.id }
             ])
-            .select(); // Select the created row to get its ID etc.
+            .select();
 
         if (error) {
             console.error("[COLLECTIONS.JS] Error creating collection:", error.message);
@@ -131,12 +135,10 @@ export async function handleCreateCollection(collectionName) {
         }
 
         console.log("[COLLECTIONS.JS] Collection created successfully:", data);
-        alert(`Collection "${collectionName}" created successfully!`); // Confirmation for user
+        alert(`Collection "${collectionName}" created successfully!`);
         
-        // Reload collections to update the UI
-        await loadCollectionsForCurrentUser();
+        await loadCollectionsForCurrentUser(); // Reload collections to update the UI
         
-        // Clear the input field after successful creation
         const newCollectionNameInput = document.getElementById('new-collection-name');
         if (newCollectionNameInput) {
             newCollectionNameInput.value = '';
