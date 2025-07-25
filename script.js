@@ -1,24 +1,25 @@
-// script.js (your main entry point)
-//import { initMap, loadMarkersForCurrentUser } from '/Memory_Map/js/map.js';
-import { setupAuthUI } from '/Memory_Map/js/auth.js';
-//import { setupCollectionListeners, loadCollectionsForCurrentUser } from '/Memory_Map/js/collections.js';
-// No direct import of dialog.js needed here, map.js imports it.
+// js/script.js - DIAGNOSTIC VERSION (Consolidating Supabase Client)
+
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'; // Keep this import
+
+// Define and export the Supabase client directly in this file
+const SUPABASE_URL = 'https://szcotkwupwrbawgprkbk.supabase.co'; // Replace with your Project URL
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6Y290a3d1cHdyYmFwYnJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzNTEyNDcsImV4cCI6MjA2ODkyNzI0N30.e-cQbi9lt803sGD-SUItopcE6WgmYcxLFgPsGFp32zI'; // Replace with your anon key
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+import { setupAuthUI } from '/Memory_Map/js/auth.js'; // Keep this import
+
+// No need to import map or collections modules if they are commented out in index.html
+// and their calls are commented out in auth.js.
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Initialize the map first
-    // Temporarily comment out initMap call during isolation
-    // const mapInstance = initMap(); 
-    const mapInstance = null; // Provide a dummy mapInstance to setupAuthUI if it expects one
+    // mapInstance will be null as map.js is not loaded
+    const mapInstance = null;
 
-    // Setup Auth UI, passing mapInstance for potential cleanup on logout
-    setupAuthUI(mapInstance); // auth.js will now receive 'null' for mapInstance
+    // Setup Auth UI, passing mapInstance (which is null here)
+    setupAuthUI(mapInstance);
 
-    // Setup Collection listeners (create button etc.)
-    // Temporarily comment out setupCollectionListeners call during isolation
+    // Keep other parts commented out as in previous step
+    // const mapInstance = initMap();
     // setupCollectionListeners();
-
-    // The initial session check and data loading (markers/collections)
-    // are handled by onAuthStateChange in auth.js.
-    // Ensure that in auth.js, the calls to loadMarkersForCurrentUser and loadCollectionsForCurrentUser
-    // are also commented out during this test phase.
 });
