@@ -6,7 +6,7 @@ import { loadCollectionsForCurrentUser, getSelectedCollectionIds, resetCollectio
 let map;
 let currentMarkers = []; // Store markers retrieved from DB
 
-const supportedMarkerColors = { // Keep this here for icon creation
+const supportedMarkerColors = {
     'Blue': '#3498db',
     'Red': '#e74c3c',
     'Green': '#2ecc71',
@@ -51,14 +51,39 @@ export function initMap() {
         .bindPopup('A charming spot in Bergen, Norway!')
         .openPopup();
 
-    setupMapClickEventListener(); // Attach the map click listener
-    return map; // Return map instance for other modules if needed
+    setupMapClickEventListener();
+    return map;
 }
 
 export async function loadMarkersForCurrentUser() {
-    const { data: userData } = await supabase.auth.getUser();
+    console.log("loadMarkersForCurrentUser: Attempting to get user session...");
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+        console.error("loadMarkersForCurrentUser: Error getting user:", userError.message);
+        // Clear markers if there's an error getting user, to reflect logged-out state.
+        map.eachLayer(function(layer) {
+            if (layer instanceof L.Marker) {
+                map.removeLayer(layer);
+            }
+        });
+        return;
+    }
+
     const user = userData.user;
-    if (!user) return;
+    
+    console.log("loadMarkersForCurrentUser: User object received:", user);
+
+    if (!user) {
+        console.warn("loadMarkersForCurrentUser: No user session found. Not loading markers.");
+        // Clear existing markers from map if user logs out
+        map.eachLayer(function(layer) {
+            if (layer instanceof L.Marker) {
+                map.removeLayer(layer);
+            }
+        });
+        return;
+    }
 
     // Clear existing markers from map before redrawing
     map.eachLayer(function(layer) {
@@ -82,12 +107,15 @@ export async function loadMarkersForCurrentUser() {
                     name
                 )
             )
-        `);
+        `)
+        .eq('user_id', user.id); // <--- CRITICAL FIX: Filter by user_id
 
     if (error) {
         console.error('Error loading markers:', error.message);
         return;
     }
+
+    console.log("loadMarkersForCurrentUser: Markers data received:", data);
 
     currentMarkers = data;
     currentMarkers.forEach(markerData => {
@@ -105,11 +133,19 @@ export async function loadMarkersForCurrentUser() {
         }
         newMarker.bindPopup(popupContent);
     });
+    console.log("loadMarkersForCurrentUser: Finished rendering markers.");
 }
 
 function setupMapClickEventListener() {
     map.on('click', async function(e) {
-        const { data: userData } = await supabase.auth.getUser();
+        const { data: userData, error: userError } = await supabase.auth.getUser(); // Add error handling
+        
+        if (userError) {
+            console.error("Map click: Error getting user:", userError.message);
+            alert('An error occurred. Please try logging in again.');
+            return;
+        }
+
         const user = userData.user;
         if (!user) {
             alert('Please log in to add markers.');
@@ -120,8 +156,8 @@ function setupMapClickEventListener() {
         const clickedLng = e.latlng.lng;
 
         try {
-            resetCollectionSelection(); // Reset collection checkboxes and input
-            await loadCollectionsForCurrentUser(); // Ensure latest collections are loaded
+            resetCollectionSelection();
+            await loadCollectionsForCurrentUser();
 
             const userInput = await showMarkerDialog(clickedLat, clickedLng);
 
@@ -170,7 +206,8 @@ function setupMapClickEventListener() {
             alert('Marker added successfully!');
             loadMarkersForCurrentUser();
         } catch (error) {
-            console.log(error.message);
+            console.error("Map click error:", error.message); // More specific error logging
+            alert("An error occurred while adding marker: " + error.message);
         }
     });
 }
