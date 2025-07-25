@@ -1,13 +1,15 @@
-// js/script.js - EXACT REPLICA OF WORKING INLINE SCRIPT
+// js/script.js - Importing dialog.js
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+// IMPORT DIALOG.JS HERE
+import { showDialog } from '/Memory_Map/js/dialog.js';
 
 // YOUR PROJECT URL AND ANON KEY (as provided in your test.html)
 const SUPABASE_URL = 'https://szcotkwupwrbawgprkbk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6Y290a3d1cHdyYmF3Z3Bya2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzNTEyNDcsImV4cCI6MjA2ODkyNzI0N30.e-cQbi9lt803sGD-SUItopcE6WgmYcxLFgPsGFp32zI';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-console.log("Supabase client created successfully from external script."); // Added log for clarity
+console.log("Supabase client created successfully from external script.");
 
 const authContainer = document.getElementById('auth-container');
 const appContainer = document.getElementById('app-container');
@@ -18,6 +20,8 @@ const passwordInput = document.getElementById('password');
 const loginBtn = document.getElementById('loginBtn');
 const signupBtn = document.getElementById('signupBtn');
 const logoutBtn = document.getElementById('logoutBtn');
+// Get reference to the new test dialog button
+const testDialogBtn = document.getElementById('testDialogBtn');
 
 async function fetchUserProfile(userId) {
     console.log("Attempting to fetch profile for user ID:", userId);
@@ -74,7 +78,7 @@ signupBtn.addEventListener('click', async () => {
         email: emailInput.value,
         password: passwordInput.value,
         options: { data: { username: emailInput.value.split('@')[0] } } // Simple username for test
-    });
+    } );
     if (signUpError) console.error('Signup failed:', signUpError.message);
     else if (user) alert('Check your email for confirmation!');
 });
@@ -83,6 +87,14 @@ logoutBtn.addEventListener('click', async () => {
     const { error } = await supabase.auth.signOut();
     if (error) console.error('Logout failed:', error.message);
 });
+
+// EVENT LISTENER FOR THE NEW DIALOG TEST BUTTON
+if (testDialogBtn) {
+    testDialogBtn.addEventListener('click', () => {
+        showDialog("This is a test message from Dialog.js!");
+    });
+}
+
 
 supabase.auth.onAuthStateChange((event, session) => {
     console.log("Auth state changed:", event, session ? "Session present" : "No session");

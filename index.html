@@ -5,6 +5,7 @@
 </head>
 <body>
     <h1>Supabase Test App</h1>
+    
     <div id="auth-container">
         <h2>Login / Signup</h2>
         <input type="email" id="email" placeholder="Email">
@@ -12,13 +13,18 @@
         <button id="loginBtn">Login</button>
         <button id="signupBtn">Sign Up</button>
     </div>
+
     <div id="app-container" style="display: none;">
         <h2>Welcome, <span id="usernameSpan"></span>!</h2>
         <button id="logoutBtn">Logout</button>
         <h3>Your Profile:</h3>
         <pre id="profileData"></pre>
+        <hr>
+        <button id="testDialogBtn">Test Dialog</button>
     </div>
 
-    <script src="/Memory_Map/script.js" type="module" defer></script>
+    <script src="/Memory_Map/js/script.js" type="module" defer></script>
+    
+    <script src="/Memory_Map/js/dialog.js" type="module" defer></script>
 </body>
 </html>
