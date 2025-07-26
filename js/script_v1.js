@@ -1,9 +1,9 @@
 // js/script.js - Main application logic
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-import { showDialog } from '/Memory_Map/js/dialog.js'; // Ensure this is the updated dialog.js
-import { initializeMap, setMapClickCallback, clearAllMapMarkers, addMarkerToMap } from '/Memory_Map/js/map.js'; // Import new map functions
-import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection, handleCreateCollection, getSelectedCollectionId, getAllCollections } from '/Memory_Map/js/collections.js'; // Import new getAllCollections
+import { showDialog } from '/Memory_Map/js/dialog_v1.js'; // Ensure this is the updated dialog.js
+import { initializeMap, setMapClickCallback, clearAllMapMarkers, addMarkerToMap } from '/Memory_Map/js/map_v1.js'; // Import new map functions
+import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection, handleCreateCollection, getSelectedCollectionId, getAllCollections } from '/Memory_Map/js/collections_v1.js'; // Import new getAllCollections
 
 // YOUR PROJECT URL AND ANON KEY - Make sure these are correct for YOUR project
 const SUPABASE_URL = 'https://szcotkwupwrbawgprkbk.supabase.co';
@@ -28,7 +28,6 @@ const testDialogBtn = document.getElementById('testDialogBtn');
 const newCollectionNameInput = document.getElementById('new-collection-name');
 const createCollectionBtn = document.getElementById('create-collection-btn');
 
-let collectionListenerAttached = false;
 
 async function fetchUserProfile(userId) {
     console.log("[SCRIPT.JS] Attempting to fetch profile for user ID:", userId);
@@ -301,20 +300,11 @@ if (testDialogBtn) {
     });
 }
 
-// --- START OF MODIFIED SECTION FOR COLLECTION BUTTON ---
-// Attach the create collection handler from collections.js
-// This 'if' condition now ensures the listener is only attached once, even if this block runs multiple times.
-if (createCollectionBtn && newCollectionNameInput && !collectionListenerAttached) {
+if (createCollectionBtn && newCollectionNameInput) {
     createCollectionBtn.addEventListener('click', () => {
         handleCreateCollection(newCollectionNameInput.value.trim());
     });
-    collectionListenerAttached = true; // Set the flag to true after attaching the listener
-    console.log("[SCRIPT.JS] Collection creation listener attached successfully.");
-} else if (collectionListenerAttached) {
-    // This console.warn will help you confirm if the block is being hit multiple times
-    console.warn("[SCRIPT.JS] Attempted to re-attach collection creation listener, but it was already attached (this is expected if the script re-runs, but the listener won't be duplicated).");
 }
-// --- END OF MODIFIED SECTION FOR COLLECTION BUTTON ---
 
 // Supabase Auth State Change Listener
 supabase.auth.onAuthStateChange((event, session) => {
