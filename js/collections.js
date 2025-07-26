@@ -146,12 +146,14 @@ export async function handleCreateCollection(collectionName) {
 
         if (error) {
             console.error("[COLLECTIONS.JS] Error creating collection:", error.message);
-            alert("Error creating collection: " + error.message);
+            //alert("Error creating collection: " + error.message);
+            showDialog("Error", `Error creating collection: ${error.message}`);
             return;
         }
 
         console.log("[COLLECTIONS.JS] Collection created successfully:", data);
-        alert(`Collection "${collectionName}" created successfully!`);
+        //alert(`Collection "${collectionName}" created successfully!`);
+        showDialog("Success", `Collection "${collectionName}" created successfully!`);
         
         await loadCollectionsForCurrentUser(); // Reload collections to update the UI and selection
         
@@ -162,6 +164,7 @@ export async function handleCreateCollection(collectionName) {
 
     } catch (e) {
         console.error("[COLLECTIONS.JS] Uncaught error during collection creation:", e.message);
-        alert("An unexpected error occurred during collection creation.");
+        //alert("An unexpected error occurred during collection creation.");
+        showDialog("Error", `An unexpected error occurred during collection creation: ${e.message}`);
     }
 }

@@ -28,6 +28,8 @@ const testDialogBtn = document.getElementById('testDialogBtn');
 const newCollectionNameInput = document.getElementById('new-collection-name');
 const createCollectionBtn = document.getElementById('create-collection-btn');
 
+let collectionListenerAttached = false;
+
 async function fetchUserProfile(userId) {
     console.log("[SCRIPT.JS] Attempting to fetch profile for user ID:", userId);
     try {
@@ -299,12 +301,20 @@ if (testDialogBtn) {
     });
 }
 
+// --- START OF MODIFIED SECTION FOR COLLECTION BUTTON ---
 // Attach the create collection handler from collections.js
-if (createCollectionBtn && newCollectionNameInput) {
+// This 'if' condition now ensures the listener is only attached once, even if this block runs multiple times.
+if (createCollectionBtn && newCollectionNameInput && !collectionListenerAttached) {
     createCollectionBtn.addEventListener('click', () => {
         handleCreateCollection(newCollectionNameInput.value.trim());
     });
+    collectionListenerAttached = true; // Set the flag to true after attaching the listener
+    console.log("[SCRIPT.JS] Collection creation listener attached successfully.");
+} else if (collectionListenerAttached) {
+    // This console.warn will help you confirm if the block is being hit multiple times
+    console.warn("[SCRIPT.JS] Attempted to re-attach collection creation listener, but it was already attached (this is expected if the script re-runs, but the listener won't be duplicated).");
 }
+// --- END OF MODIFIED SECTION FOR COLLECTION BUTTON ---
 
 // Supabase Auth State Change Listener
 supabase.auth.onAuthStateChange((event, session) => {
