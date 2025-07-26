@@ -19,6 +19,7 @@ const usernameSpan = document.getElementById('usernameSpan');
 const profileData = document.getElementById('profileData');
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
+const usernameInput = document.getElementById('username');
 const loginBtn = document.getElementById('loginBtn');
 const signupBtn = document.getElementById('signupBtn');
 const logoutBtn = document.getElementById('logoutBtn');
@@ -259,6 +260,35 @@ loginBtn.addEventListener('click', async () => {
 });
 
 signupBtn.addEventListener('click', async () => {
+    const enteredUsername = usernameInput.value.trim(); // Get the username value
+    if (!enteredUsername) {
+        showDialog("Error", "Username cannot be empty. Please enter a username.");
+        return; // Stop the signup if username is empty
+    }
+
+    const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+        email: emailInput.value,
+        password: passwordInput.value,
+        options: {
+            // This is the crucial part that sends the username to Supabase's auth.users.raw_user_meta_data
+            data: {
+                username: enteredUsername
+            }
+        }
+    });
+    if (signUpError) {
+        console.error('Signup failed:', signUpError.message);
+        showDialog("Signup Failed", `Error: ${signUpError.message}`);
+    } else if (user) {
+        showDialog("Success", `User ${user.email} signed up! Check your email for confirmation (if enabled).`);
+        // Optional: Clear fields after successful signup attempt
+        emailInput.value = '';
+        passwordInput.value = '';
+        usernameInput.value = ''; // Clear username field too
+    }
+});
+/*
+signupBtn.addEventListener('click', async () => {
     const { data: { user }, error: signUpError } = await supabase.auth.signUp({
         email: emailInput.value,
         password: passwordInput.value,
@@ -267,6 +297,7 @@ signupBtn.addEventListener('click', async () => {
     if (signUpError) console.error('Signup failed:', signUpError.message);
     else if (user) alert('Check your email for confirmation!');
 });
+*/
 
 logoutBtn.addEventListener('click', async () => {
     const { error } = await supabase.auth.signOut();
