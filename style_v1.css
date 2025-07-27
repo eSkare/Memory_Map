@@ -120,11 +120,15 @@ hr {
         margin-bottom: 5px;
     }
     #collections-container {
-        flex-grow: 0; /* On mobile, give it a fixed height instead of growing */
-        min-height: auto; /* Reset min-height */
-        max-height: 120px; /* Make the whole box smaller on mobile (e.g., about 2 rows of items) */
+        flex-grow: 0;
+        min-height: auto;
+        max-height: 120px; /* This caps its visible height */
         margin-top: 5px;
         padding: 8px;
+        
+        /* --- CRUCIAL CHANGE HERE --- */
+        overflow-y: auto; /* Allow vertical scrolling if content exceeds max-height */
+        overflow-x: hidden; /* Explicitly prevent horizontal scrolling for the container itself */
     }
     #collections-list {
         max-height: 100%; /* Still fills parent */
