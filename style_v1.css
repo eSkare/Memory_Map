@@ -1,16 +1,13 @@
 /* 1. Base setup: Make html and body fill the screen and use flexbox */
 html, body {
-    height: 100%; /* Make them take full viewport height */
+    height: 100%;
     margin: 0;
-    padding: 0;
+    /* Adjust padding: padding-bottom should be 0 to remove space beneath the last element */
+    padding: 10px 10px 0 10px; /* Top, Right, Bottom (0), Left */
     overflow: hidden; /* Prevent main page scrolling; internal scrolling will handle content */
-}
-
-body {
-    display: flex; /* Make body a flex container */
-    flex-direction: column; /* Stack its children vertically */
-    box-sizing: border-box; /* Include padding/border in element's total width/height */
-    padding: 10px; /* Global padding for the page content */
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
 }
 
 /* 2. Style static header elements (h1, p) */
@@ -18,108 +15,114 @@ body > h1,
 body > p {
     flex-shrink: 0; /* These elements should take their natural height and not shrink */
     text-align: center;
-    margin-top: 0; /* Adjust as needed */
-    margin-bottom: 5px; /* Spacing below header */
+    margin-top: 0;
+    margin-bottom: 5px; /* Reduced spacing below header */
 }
 
 /* 3. Make main containers (#auth-container, #app-container) fill available space */
 #auth-container,
 #app-container {
     flex-grow: 1; /* These will expand to fill vertical space */
-    display: flex; /* Make them flex containers for their own children */
+    display: flex;
     flex-direction: column; /* Stack their children vertically */
     overflow: hidden; /* Important: prevents scrollbars here, allowing children to manage their own scroll */
     box-sizing: border-box;
-    padding: 10px; /* Padding inside the app/auth container */
-    border: 1px solid #eee; /* Existing border */
-    border-radius: 8px; /* Existing border-radius */
-    background-color: #f9f9f9; /* Existing background */
+    /* Adjust padding here - consider if you need padding at the very bottom inside this container */
+    padding: 10px; /* Keep overall padding, adjust if inner elements need tighter bottom */
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background-color: #f9f9f9;
 }
 
-/* Ensure #app-container is visible by default for styling */
-/* #app-container { display: flex; } /* Temporarily for development, remove for production */
-
-
-/* 4. Style elements within #app-container */
+/* 4. Style elements within #app-container (buttons, etc.) */
 #app-container h2,
 #app-container button,
-#app-container h3,
-#app-container hr,
-#collections-container h3,
+/* Removed #app-container h3 and hr from here, as they are now styled explicitly or within collections-container */
+#collections-container h3, /* This h3 is specifically inside collections-container now */
 #collections-container input,
 #collections-container button {
     flex-shrink: 0; /* These elements should take their natural height */
-    margin-bottom: 5px; /* Add some spacing below them */
+    margin-bottom: 5px; /* Reduced spacing below them */
 }
 
-/* Make the map itself flexible */
+/* Make the map itself flexible and take most space */
 #map {
     width: 100%;
-    flex-grow: 2; /* Make map grow to take more space than other flexible items */
-    min-height: 200px; /* Minimum height on very small screens */
-    margin-top: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #ccc; /* Existing border */
+    flex-grow: 7; /* Map takes 7 parts of available flexible space (e.g., ~70% if ratio is 7:3) */
+    min-height: 200px; /* Minimum height for usability */
+    margin-top: 5px; /* Reduced margin above map */
+    margin-bottom: 5px; /* Reduced margin below map */
+    border: 1px solid #ccc;
 }
 
-/* Manage potentially overflowing sections with internal scrolling */
-#profileData {
-    flex-shrink: 0; /* Don't let it grow unless needed, or just set max-height */
-    max-height: 100px; /* Example: limit height, adjust as needed (e.g., 10vh) */
-    overflow-y: auto; /* Enable vertical scrolling if content exceeds max-height */
-    white-space: pre-wrap; /* Preserve formatting but allow wrapping */
-    word-wrap: break-word; /* Break long words */
+/* Adjustments for the hr elements */
+hr {
+    flex-shrink: 0; /* Ensure hr takes its natural height and doesn't compress */
+    width: 100%;
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 5px 0; /* Reduced vertical margin for HRs */
+}
+
+/* Collections Container - Make it smaller and control its vertical growth */
+#collections-container {
+    flex-grow: 3; /* Collections container takes 3 parts of available flexible space */
+    min-height: 100px; /* Ensure it's not too small on desktop */
+    /* Optional: If you want an absolute cap, use max-height: */
+    /* max-height: 200px; /* Example: Cap its height */
+    
+    display: flex; /* It needs to be a flex container for its own contents */
+    flex-direction: column; /* Stack its children vertically */
+    
+    margin-top: 5px; /* Reduced margin above it */
+    margin-bottom: 0; /* **Crucial: Remove margin at the bottom** */
+    padding: 10px; /* Slightly reduced internal padding */
     border: 1px solid #eee;
-    padding: 5px;
-    background-color: #f0f0f0;
-    margin-bottom: 10px; /* Spacing */
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-sizing: border-box;
+    overflow: hidden; /* Ensure its contents scroll internally if needed */
 }
 
+/* collections-list (inside collections-container) */
 #collections-list {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
     margin-top: 10px;
-    flex-shrink: 0;
-    flex-grow: 1; /* <-- ADD THIS LINE */
-    max-height: 120px; /* This will be the *maximum* height it can grow to */
-    overflow-y: auto;
-    /* Add this if not already there, important for wrapped flex items with height constraints */
-    align-content: flex-start;
-}
-
-/* Adjustments for the collections container itself */
-#collections-container {
-    flex-grow: 1; /* Allow collections container to grow and take remaining space */
-    display: flex;
-    flex-direction: column;
-    margin-top: 20px;
-    padding: 15px;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    background-color: #f9f9f9;
-    box-sizing: border-box;
+    flex-shrink: 0; /* Important: Don't let it shrink */
+    flex-grow: 1; /* Allow the list itself to grow within collections-container */
+    max-height: 100%; /* This will allow it to fill its parent's height up to 100% */
+    overflow-y: auto; /* Enable vertical scrolling for the list */
+    align-content: flex-start; /* Important for wrapped flex items when height is constrained */
 }
 
 
 /* --- Media Queries for Mobile Responsiveness --- */
-/* Adjust flex-grow ratios or max-heights for different screen sizes */
 @media (max-width: 768px) {
     body {
-        padding: 5px;
+        padding: 5px 5px 0 5px; /* Less padding on mobile, 0 at bottom */
     }
     #app-container, #auth-container {
         padding: 5px;
     }
     #map {
-        flex-grow: 1; /* Map might take less priority on small screens */
+        flex-grow: 4; /* Map might take slightly less priority, e.g., 60% (4:2 ratio) */
         min-height: 150px;
+        margin-top: 5px;
+        margin-bottom: 5px;
     }
-    #profileData {
-        max-height: 80px; /* Less space for profile on mobile */
+    #collections-container {
+        flex-grow: 2; /* Collections container takes remaining flexible space */
+        min-height: 80px; /* Smaller minimum height for mobile */
+        margin-top: 5px;
+        padding: 8px; /* Slightly less padding on mobile */
     }
     #collections-list {
-        max-height: 100px; /* Less space for collections on mobile */
+        max-height: 100%; /* Still fills parent */
+    }
+    #profileData { /* If you add this back in the future, consider its mobile sizing */
+        max-height: 80px;
     }
     .collection-item {
         font-size: 0.85em;
