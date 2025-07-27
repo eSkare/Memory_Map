@@ -5,20 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Add Leaflet CSS (without integrity for now, as that's what works for you) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous">
-    <link rel="stylesheet" href="/Memory_Map/style_v2.css">
+
+    <!-- Web -->
+    <link rel="stylesheet" href="/Memory_Map/style_v3.css">
+
+    <!-- Local, Live server -->
+    <!-- <link rel="stylesheet" href="/style_v3.css"> -->
 </head>
 <body>
     <h1>Memory Map! 🗺️</h1>
     <p>A place to store your favorite locations📍</p>
     
-    <!-- Auth Container -->
     <div id="auth-container">
-        <h2>Login / Signup</h2>
+        <h2><span id="auth-mode-title">Login</span></h2> 
+
         <input type="email" id="email" placeholder="Email">
         <input type="password" id="password" placeholder="Password">
-        <input type="text" id="username" placeholder="Username">
-        <button id="loginBtn">Login</button>
-        <button id="signupBtn">Sign Up</button>
+
+        <div id="username-field-group" style="display: none;"> 
+            <input type="text" id="username" placeholder="Username">
+        </div>
+
+        <button id="authSubmitBtn">Login</button> 
+
+        <p>
+            <a href="#" id="toggleAuthMode">Don't have an account? Sign Up</a>
+        </p>
     </div>
 
     <!-- App Container (Visible after login) -->
@@ -43,10 +55,18 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
     <!-- cache-busting, increment the version number after new update and testing. update ALL IMPORTS AND FILE NAMES -->
-    <script src="/Memory_Map/js/script_v2.js" type="module" defer></script>
+    <!-- Web -->
+    <script src="/Memory_Map/js/script_v3.js" type="module" defer></script>
     <script src="/Memory_Map/js/dialog_v1.js" type="module" defer></script>
     <script src="/Memory_Map/js/map_v1.js" type="module" defer></script>
-    <script src="/Memory_Map/js/collections_v1.js" type="module" defer></script>
+    <script src="/Memory_Map/js/collections_v2.js" type="module" defer></script>
+
+    <!-- Local, Live server-->
+    <!-- <script src="/js/script_v3.js" type="module" defer></script>
+    <script src="/js/dialog_v1.js" type="module" defer></script>
+    <script src="/js/map_v1.js" type="module" defer></script>
+    <script src="/js/collections_v2.js" type="module" defer></script> -->
+
 
 </body>
 </html>

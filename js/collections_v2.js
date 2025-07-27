@@ -1,7 +1,12 @@
 // js/collections.js - Exporting all current collections and selected ID
 
+// Web
 import { showDialog } from '/Memory_Map/js/dialog_v1.js';
-import { supabase } from '/Memory_Map/js/script_v2.js'; // Import supabase instance
+import { supabase } from '/Memory_Map/js/script_v3.js'; // Import supabase instance
+
+/* // Local, Liver server
+import { showDialog } from '/js/dialog_v1.js';
+import { supabase } from '/js/script_v3.js'; // Import supabase instance */
 
 console.log("[COLLECTIONS.JS] collections.js loaded successfully.");
 

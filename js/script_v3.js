@@ -1,9 +1,18 @@
 // js/script.js - Main application logic
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+// Web
 import { showDialog } from '/Memory_Map/js/dialog_v1.js'; // Ensure this is the updated dialog.js
 import { initializeMap, setMapClickCallback, clearAllMapMarkers, addMarkerToMap } from '/Memory_Map/js/map_v1.js'; // Import new map functions
-import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection, handleCreateCollection, getSelectedCollectionId, getAllCollections } from '/Memory_Map/js/collections_v1.js'; // Import new getAllCollections
+import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection, handleCreateCollection, getSelectedCollectionId, getAllCollections } from '/Memory_Map/js/collections_v2.js'; // Import new getAllCollections
+
+
+/* // Local, Live server
+import { showDialog } from '/js/dialog_v1.js'; // Ensure this is the updated dialog.js
+import { initializeMap, setMapClickCallback, clearAllMapMarkers, addMarkerToMap } from '/js/map_v1.js'; // Import new map functions
+import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection, handleCreateCollection, getSelectedCollectionId, getAllCollections } from '/js/collections_v2.js'; */
+
 
 // YOUR PROJECT URL AND ANON KEY - Make sure these are correct for YOUR project
 const SUPABASE_URL = 'https://szcotkwupwrbawgprkbk.supabase.co';
@@ -19,14 +28,45 @@ const usernameSpan = document.getElementById('usernameSpan');
 //const profileData = document.getElementById('profileData');
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
-const usernameInput = document.getElementById('username');
-const loginBtn = document.getElementById('loginBtn');
-const signupBtn = document.getElementById('signupBtn');
+//const usernameInput = document.getElementById('username');
+//const loginBtn = document.getElementById('loginBtn');
+//const signupBtn = document.getElementById('signupBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 //const testDialogBtn = document.getElementById('testDialogBtn');
 
 const newCollectionNameInput = document.getElementById('new-collection-name');
 const createCollectionBtn = document.getElementById('create-collection-btn');
+
+const authModeTitle = document.getElementById('auth-mode-title');
+const usernameFieldGroup = document.getElementById('username-field-group');
+const usernameInput = document.getElementById('username'); // Get the actual username input
+const authSubmitBtn = document.getElementById('authSubmitBtn');
+const toggleAuthModeLink = document.getElementById('toggleAuthMode');
+
+// Add a state variable to keep track of the current mode
+let isLoginMode = true; // Start in Login mode
+
+// --- Event Listener for Toggling Login/Signup Mode ---
+toggleAuthModeLink.addEventListener('click', (e) => {
+    e.preventDefault(); // Prevent the link from navigating
+
+    isLoginMode = !isLoginMode; // Toggle the state
+
+    if (isLoginMode) {
+        // Switch to Login Mode
+        authModeTitle.textContent = "Login";
+        usernameFieldGroup.style.display = 'none'; // Hide username field
+        usernameInput.value = ''; // Clear username field when switching away
+        authSubmitBtn.textContent = "Login";
+        toggleAuthModeLink.innerHTML = "Don't have an account? Sign Up";
+    } else {
+        // Switch to Sign Up Mode
+        authModeTitle.textContent = "Sign Up";
+        usernameFieldGroup.style.display = 'flex'; // Show username field (or 'flex' if you use flexbox for it)
+        authSubmitBtn.textContent = "Sign Up";
+        toggleAuthModeLink.innerHTML = "Already have an account? Login";
+    }
+});
 
 
 async function fetchUserProfile(userId) {
@@ -259,7 +299,7 @@ async function updateUI(session) {
         await loadAndDisplayAllMarkers();
 
     } else {
-        authContainer.style.display = 'block';
+        authContainer.style.display = 'flex';
         appContainer.style.display = 'none';
         
         if (usernameSpan) {
@@ -276,43 +316,56 @@ async function updateUI(session) {
     }
 }
 
-// Event Listeners
-loginBtn.addEventListener('click', async () => {
-    const { error } = await supabase.auth.signInWithPassword({
-        email: emailInput.value,
-        password: passwordInput.value
-    });
-    if (error) console.error('Login failed:', error.message);
-});
+authSubmitBtn.addEventListener('click', async () => {
+    //const email = document.getElementById('email').value;
+    //const password = document.getElementById('password').value;
 
-signupBtn.addEventListener('click', async () => {
-    const enteredUsername = usernameInput.value.trim(); // Get the username value
-    if (!enteredUsername) {
-        showDialog("Error", "Username cannot be empty. Please enter a username.");
-        return; // Stop the signup if username is empty
-    }
-
-    const { data: { user }, error: signUpError } = await supabase.auth.signUp({
-        email: emailInput.value,
-        password: passwordInput.value,
-        options: {
-            // This is the crucial part that sends the username to Supabase's auth.users.raw_user_meta_data
-            data: {
-                username: enteredUsername
-            }
+    if (isLoginMode) {
+        const { error } = await supabase.auth.signInWithPassword({
+            email: emailInput.value,
+            password: passwordInput.value
+        });
+        if (error) {
+            console.error('Authentication failed:', error); // Keep console.error for debugging!
+            // Call your showDialog function
+            // Assuming showDialog(title, message, type)
+            showDialog('Authentication Error', error.message, 'error'); // Or 'alert', 'danger', etc., depending on your dialog's implementation
+            // You might also want to clear password field here for security
+            document.getElementById('password').value = '';
         }
-    });
-    if (signUpError) {
-        console.error('Signup failed:', signUpError.message);
-        showDialog("Signup Failed", `Error: ${signUpError.message}`);
-    } else if (user) {
-        showDialog("Success", `User ${user.email} signed up! Check your email for confirmation (if enabled).`);
-        // Optional: Clear fields after successful signup attempt
-        emailInput.value = '';
-        passwordInput.value = '';
-        usernameInput.value = ''; // Clear username field too
-    }
+    } else {
+        const enteredUsername = usernameInput.value.trim(); // Get the username value
+        if (!enteredUsername) {
+            showDialog("Error", "Username cannot be empty. Please enter a username.");
+            return; // Stop the signup if username is empty
+        }
+
+        const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+            email: emailInput.value,
+            password: passwordInput.value,
+            options: {
+                // This is the crucial part that sends the username to Supabase's auth.users.raw_user_meta_data
+                data: {
+                    username: enteredUsername
+                }
+            }
+        });
+        if (signUpError) {
+            console.error('Signup failed:', signUpError.message);
+            showDialog("Signup Failed", `Error: ${signUpError.message}`);
+        } else if (user) {
+            showDialog("Success", `User ${user.email} signed up! Check your email for confirmation`);
+            // Optional: Clear fields after successful signup attempt
+            emailInput.value = '';
+            passwordInput.value = '';
+            usernameInput.value = ''; // Clear username field too
+        }
+        }
+    // Clear password field after attempt (good practice)
+    document.getElementById('password').value = ''; 
 });
+
+
 
 logoutBtn.addEventListener('click', async () => {
     const { error } = await supabase.auth.signOut();

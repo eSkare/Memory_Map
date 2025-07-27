@@ -19,8 +19,33 @@ body > p {
     margin-bottom: 5px; /* Reduced spacing below header */
 }
 
-/* 3. Make main containers (#auth-container, #app-container) fill available space */
-#auth-container,
+#auth-container {
+    display: flex;          /* Makes the container a flex container */
+    flex-direction: column; /* Stacks its direct children vertically */
+    gap: 10px;              /* Adds 10px space between each stacked item */
+
+    /* Optional: Add some styling for better appearance */
+
+    max-width: 300px;           /* Limit the width of the form */
+    margin: 20px auto;      /* Center the form horizontally on the page */
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#auth-container input[type="email"],
+#auth-container input[type="password"],
+#auth-container input[type="text"], /* Target the username input too */
+#auth-container button {
+    width: 100%;            /* Make them span the full width of the flex item */
+    padding: 10px;
+    box-sizing: border-box; /* Include padding and border in the element's total width */
+    margin: 0;              /* Remove any default browser margins */
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
 #app-container {
     flex-grow: 1; /* These will expand to fill vertical space */
     display: flex;
@@ -45,7 +70,7 @@ body > p {
 }
 #collections-container h3 {
     flex-shrink: 0;
-    margin-top: 10px; /* Adjust this value to your preference, e.g., 5px or 8px */
+    margin-top: 5px; /* Adjust this value to your preference, e.g., 5px or 8px */
     margin-bottom: 5px; /* Keep consistent with other small margins */
 }
 #app-container h2 {
@@ -101,7 +126,7 @@ hr {
     display: flex;
     flex-wrap: nowrap;
     gap: 10px;
-    margin-top: 10px;
+    margin-top: 5px;
     flex-shrink: 0;
     height: auto; /* Takes height of its single row */
     overflow-x: auto; /* Horizontal scrolling for items */
@@ -141,7 +166,7 @@ hr {
     }
     .collection-item {
         font-size: 0.85em;
-        padding: 6px 10px;
+        padding: 4px 6px 1px;
     }
 }
 
@@ -149,7 +174,7 @@ hr {
 .collection-item {
     flex-shrink: 0; /* <-- CRUCIAL: Prevent items from shrinking when forcing horizontal flow */
     background-color: #e0e0e0;
-    padding: 8px 12px;
+    padding: 4px 6px 1px;
     border-radius: 5px;
     cursor: pointer;
     font-size: 0.9em;
