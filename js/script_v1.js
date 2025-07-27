@@ -16,14 +16,14 @@ console.log("Supabase client created successfully from external script.");
 const authContainer = document.getElementById('auth-container');
 const appContainer = document.getElementById('app-container');
 const usernameSpan = document.getElementById('usernameSpan');
-const profileData = document.getElementById('profileData');
+//const profileData = document.getElementById('profileData');
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
 const usernameInput = document.getElementById('username');
 const loginBtn = document.getElementById('loginBtn');
 const signupBtn = document.getElementById('signupBtn');
 const logoutBtn = document.getElementById('logoutBtn');
-const testDialogBtn = document.getElementById('testDialogBtn');
+//const testDialogBtn = document.getElementById('testDialogBtn');
 
 const newCollectionNameInput = document.getElementById('new-collection-name');
 const createCollectionBtn = document.getElementById('create-collection-btn');
@@ -217,21 +217,39 @@ async function saveMarkerToCollection(name, description, color, lat, lng, collec
 
 
 async function updateUI(session) {
+    const authContainer = document.getElementById('auth-container');
+    const appContainer = document.getElementById('app-container');
+    const usernameSpan = document.getElementById('usernameSpan'); // Make sure this element IS in your HTML
+
     if (session) {
         authContainer.style.display = 'none';
-        appContainer.style.display = 'block';
-        usernameSpan.textContent = session.user.email;
+        // IMPORTANT: Change 'block' to 'flex' so your CSS Flexbox layout works for height distribution
+        appContainer.style.display = 'flex';
 
-        initializeMap();
-        setMapClickCallback(handleMapClick); // Set the map click callback
+        // Set username from session (before fetching profile if you prefer this initial display)
+        if (usernameSpan) { // Always check if the element exists
+            usernameSpan.textContent = session.user.email;
+        }
 
         const profile = await fetchUserProfile(session.user.id);
         if (profile) {
-            usernameSpan.textContent = profile.username;
-            profileData.textContent = JSON.stringify(profile, null, 2);
+            // Only update usernameSpan if profile has a username, otherwise keep email from session
+            if (usernameSpan && profile.username) {
+                usernameSpan.textContent = profile.username;
+            }
+            // REMOVE OR COMMENT OUT THESE LINES, as #profileData no longer exists
+            // if (profileData) { // If you later decide to add profileData back, uncomment this check
+            //     profileData.textContent = JSON.stringify(profile, null, 2);
+            // }
         } else {
-            profileData.textContent = "Profile not found or error fetching.";
+            // REMOVE OR COMMENT OUT THIS LINE
+            // if (profileData) {
+            //     profileData.textContent = "Profile not found or error fetching.";
+            // }
         }
+
+        initializeMap();
+        setMapClickCallback(handleMapClick); // Set the map click callback
 
         console.log("[SCRIPT.JS] Calling loadCollectionsForCurrentUser...");
         await loadCollectionsForCurrentUser();
@@ -243,8 +261,15 @@ async function updateUI(session) {
     } else {
         authContainer.style.display = 'block';
         appContainer.style.display = 'none';
-        usernameSpan.textContent = 'Guest';
-        profileData.textContent = '';
+        
+        if (usernameSpan) {
+            usernameSpan.textContent = 'Guest';
+        }
+        // REMOVE OR COMMENT OUT THIS LINE
+        // if (profileData) {
+        //     profileData.textContent = '';
+        // }
+
         clearCollectionsUI();
         resetCollectionSelection();
         clearAllMapMarkers(); // Clear map markers from map on logout
@@ -294,11 +319,13 @@ logoutBtn.addEventListener('click', async () => {
     if (error) console.error('Logout failed:', error.message);
 });
 
+/*
 if (testDialogBtn) {
     testDialogBtn.addEventListener('click', () => {
         showDialog("Test Alert", "This is a test message from Dialog.js!");
     });
 }
+*/
 
 if (createCollectionBtn && newCollectionNameInput) {
     createCollectionBtn.addEventListener('click', () => {
