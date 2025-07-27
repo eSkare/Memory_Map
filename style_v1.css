@@ -49,7 +49,7 @@ body > p {
 #collections-container input,
 #collections-container button {
     flex-shrink: 0; /* These elements should take their natural height */
-    margin-bottom: 10px; /* Add some spacing below them */
+    margin-bottom: 5px; /* Add some spacing below them */
 }
 
 /* Make the map itself flexible */
