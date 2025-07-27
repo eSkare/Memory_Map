@@ -1,300 +1,138 @@
+/* 1. Base setup: Make html and body fill the screen and use flexbox */
+html, body {
+    height: 100%; /* Make them take full viewport height */
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Prevent main page scrolling; internal scrolling will handle content */
+}
+
 body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background-color: #f4f4f4;
-    color: #333;
+    display: flex; /* Make body a flex container */
+    flex-direction: column; /* Stack its children vertically */
+    box-sizing: border-box; /* Include padding/border in element's total width/height */
+    padding: 10px; /* Global padding for the page content */
 }
 
-h1 {
-    color: #0056b3;
+/* 2. Style static header elements (h1, p) */
+body > h1,
+body > p {
+    flex-shrink: 0; /* These elements should take their natural height and not shrink */
+    text-align: center;
+    margin-top: 0; /* Adjust as needed */
+    margin-bottom: 5px; /* Spacing below header */
 }
 
+/* 3. Make main containers (#auth-container, #app-container) fill available space */
+#auth-container,
+#app-container {
+    flex-grow: 1; /* These will expand to fill vertical space */
+    display: flex; /* Make them flex containers for their own children */
+    flex-direction: column; /* Stack their children vertically */
+    overflow: hidden; /* Important: prevents scrollbars here, allowing children to manage their own scroll */
+    box-sizing: border-box;
+    padding: 10px; /* Padding inside the app/auth container */
+    border: 1px solid #eee; /* Existing border */
+    border-radius: 8px; /* Existing border-radius */
+    background-color: #f9f9f9; /* Existing background */
+}
+
+/* Ensure #app-container is visible by default for styling */
+/* #app-container { display: flex; } /* Temporarily for development, remove for production */
+
+
+/* 4. Style elements within #app-container */
+#app-container h2,
+#app-container button,
+#app-container h3,
+#app-container hr,
+#collections-container h3,
+#collections-container input,
+#collections-container button {
+    flex-shrink: 0; /* These elements should take their natural height */
+    margin-bottom: 10px; /* Add some spacing below them */
+}
+
+/* Make the map itself flexible */
 #map {
-    height: 500px; /* Or whatever height you prefer */
     width: 100%;
-}
-
-
-
-
-
-
-
-
-
-/* Auth Form Basic Styles */
-#auth-container, #app-container {
-    padding: 20px;
-    max-width: 400px;
-    margin: 20px auto;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-.auth-section h2 {
-    text-align: center;
-    color: #333;
-    margin-bottom: 20px;
-}
-.auth-section input[type="email"],
-.auth-section input[type="password"],
-.auth-section input[type="text"] {
-    width: calc(100% - 20px);
-    padding: 10px;
+    flex-grow: 2; /* Make map grow to take more space than other flexible items */
+    min-height: 200px; /* Minimum height on very small screens */
+    margin-top: 10px;
     margin-bottom: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    border: 1px solid #ccc; /* Existing border */
 }
-.auth-section button {
-    background-color: #007bff;
-    color: white;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    width: 100%;
-    font-size: 16px;
-}
-.auth-section button:hover {
-    background-color: #0056b3;
-}
-.auth-section p {
-    text-align: center;
-    margin-top: 15px;
-}
-#user-info {
-    text-align: right;
-    margin-bottom: 10px;
-    font-weight: bold;
-}
-#user-info button {
-    margin-left: 10px;
-    padding: 5px 10px;
-    background-color: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-#user-info button:hover {
-    background-color: #c82333;
-}
-/* For the new collection options in dialog */
-#collectionOptionsContainer {
-    margin-top: 15px;
-    border-top: 1px solid #eee;
-    padding-top: 10px;
-}
-#collectionOptionsContainer h3 {
-    margin-bottom: 10px;
-    color: #555;
-}
-#collectionsList {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 10px;
-    margin-bottom: 15px;
-}
-#collectionsList label {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    background-color: #f8f8f8;
-    padding: 8px 12px;
-    border-radius: 5px;
+
+/* Manage potentially overflowing sections with internal scrolling */
+#profileData {
+    flex-shrink: 0; /* Don't let it grow unless needed, or just set max-height */
+    max-height: 100px; /* Example: limit height, adjust as needed (e.g., 10vh) */
+    overflow-y: auto; /* Enable vertical scrolling if content exceeds max-height */
+    white-space: pre-wrap; /* Preserve formatting but allow wrapping */
+    word-wrap: break-word; /* Break long words */
     border: 1px solid #eee;
-    cursor: pointer;
-    white-space: nowrap; /* Prevent wrapping */
-    overflow: hidden; /* Hide overflow text */
-    text-overflow: ellipsis; /* Add ellipsis */
-}
-#collectionsList label:hover {
-    background-color: #eef;
-}
-#collectionsList input[type="checkbox"] {
-    margin-right: 5px;
-}
-#newCollectionInput {
-    width: calc(100% - 22px);
-    padding: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-#createCollectionButton {
-    background-color: #28a745;
-    color: white;
-    padding: 8px 12px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    width: 100%;
-}
-#createCollectionButton:hover {
-    background-color: #218838;
+    padding: 5px;
+    background-color: #f0f0f0;
+    margin-bottom: 10px; /* Spacing */
 }
 
-
-
-
-
-
-
-
-/* Styles for the color toggles/radio buttons */
-.color-options {
+#collections-list {
     display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 20px;
     flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+    flex-shrink: 0; /* Don't let it grow */
+    max-height: 120px; /* Example: limit height, adjust as needed (e.g., 15vh) */
+    overflow-y: auto; /* Enable vertical scrolling */
 }
 
-.color-option {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.color-label {
+/* Adjustments for the collections container itself */
+#collections-container {
+    flex-grow: 1; /* Allow collections container to grow and take remaining space */
     display: flex;
     flex-direction: column;
-    align-items: center;
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-sizing: border-box;
+}
+
+
+/* --- Media Queries for Mobile Responsiveness --- */
+/* Adjust flex-grow ratios or max-heights for different screen sizes */
+@media (max-width: 768px) {
+    body {
+        padding: 5px;
+    }
+    #app-container, #auth-container {
+        padding: 5px;
+    }
+    #map {
+        flex-grow: 1; /* Map might take less priority on small screens */
+        min-height: 150px;
+    }
+    #profileData {
+        max-height: 80px; /* Less space for profile on mobile */
+    }
+    #collections-list {
+        max-height: 100px; /* Less space for collections on mobile */
+    }
+    .collection-item {
+        font-size: 0.85em;
+        padding: 6px 10px;
+    }
+}
+
+/* Additional styling for collection items */
+.collection-item {
+    background-color: #e0e0e0;
+    padding: 8px 12px;
+    border-radius: 5px;
     cursor: pointer;
-    padding: 5px;
-    border-radius: 5px;
-    border: 2px solid transparent;
-    transition: border-color 0.2s ease, background-color 0.2s ease;
+    font-size: 0.9em;
 }
-
-.color-swatch {
-    position: relative; /* IMPORTANT: Needed for positioning the ::after pseudo-element */
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    border: 2px solid #ccc;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    display: flex; /* For centering the checkmark */
-    justify-content: center;
-    align-items: center;
-}
-
-/* --- NEW: The checkmark circle styling --- */
-.color-swatch::after {
-    content: ''; /* Essential for pseudo-elements */
-    position: absolute;
-    width: 14px; /* Size of the inner circle */
-    height: 14px;
-    border-radius: 50%; /* Make it round */
-    background-color: white; /* Color of the checkmark circle */
-    border: 1px solid #007bff; /* Border for the circle */
-    display: none; /* Hidden by default */
-    opacity: 0; /* Start with 0 opacity for fade effect */
-    transition: opacity 0.2s ease, transform 0.2s ease; /* Smooth transition */
-    transform: scale(0.8); /* Start slightly smaller for pop effect */
-}
-
-.color-label span {
-    font-size: 0.8em;
-    margin-top: 5px;
-    color: #555;
-}
-
-/* Styles when a radio button is checked */
-.color-option:checked + .color-label { /* This is the key selector */
-    border-color: #007bff; /* Highlight border for selected color */
-    background-color: #e6f2ff; /* Light background for selected */
-}
-
-.color-option:checked + .color-label .color-swatch {
-    border-color: #007bff;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-.color-option:checked + .color-label .color-swatch::after {
-    display: block;
-    opacity: 1;
-    transform: scale(1);
-}
-
-/* --- NEW, SIMPLIFIED STYLES FOR L.DIVICON CUSTOM MARKERS USING SVG --- */
-
-/* Main container for the SVG icon (this is the <div> Leaflet creates) */
-.custom-svg-icon {
-    background: none;
-    border: none;
-    position: relative;
-    width: 25px; /* Matches iconSize in L.divIcon */
-    height: 41px; /* Matches iconSize in L.divIcon */
-    overflow: visible; /* Ensure shadow and any overflows are visible */
-    /* REMOVED: box-shadow from here. It will be on the separate shadow-blob div now. */
-}
-
-/* NEW: Style for the separate shadow blob */
-.marker-shadow-blob {
-    position: absolute;
-    bottom: 0px; /* Position at the bottom of the icon */
-    left: 50%;
-    width: 20px; /* Width of the shadow ellipse */
-    height: 8px; /* Height of the shadow ellipse */
-    background-color: rgba(0, 0, 0, 0.4); /* Color of the shadow */
-    border-radius: 50%; /* Make it an ellipse */
-    transform: translateX(-50%) scaleY(0.7); /* Center and flatten slightly */
-    filter: blur(1.5px); /* Soften the edges of the shadow */
-    z-index: 0; /* Ensure it's behind the pin and icon */
-}
-
-/* Style for the SVG element itself (the pin shape) */
-.custom-svg-icon .marker-svg-shape {
-    display: block;
-    position: absolute;
-    top: 8px;   /* MODIFIED: Shift the SVG down by 2px within the 41px container */
-    left: 0;
-    z-index: 1;
-}
-
-
-/* Specific swatch colors (using direct background-color) */
-/* These match the colors in supportedMarkerColors in script.js */
-.color-swatch.swatch-blue { background-color: #3498db; }
-.color-swatch.swatch-red { background-color: #e74c3c; }
-.color-swatch.swatch-green { background-color: #2ecc71; }
-.color-swatch.swatch-yellow { background-color: #f1c40f; }
-.color-swatch.swatch-purple { background-color: #9b59b6; }
-.color-swatch.swatch-orange { background-color: #e67e22; }
-.color-swatch.swatch-gray { background-color: #95a5a6; }
-
-
-
-
-
-.message-display {
-    padding: 10px;
-    margin-top: 10px;
-    border-radius: 5px;
-    font-weight: bold;
-    text-align: center;
-    display: none; /* Hidden by default */
-    opacity: 0;
-    transition: opacity 0.5s ease-in-out;
-}
-
-.message-display.success {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-}
-
-.message-display.error {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-}
-
-.message-display.warning {
-    background-color: #fff3cd;
-    color: #856404;
-    border: 1px solid #ffeeba;
+.collection-item.selected {
+    background-color: #007bff;
+    color: white;
 }
