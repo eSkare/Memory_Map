@@ -35,14 +35,21 @@ body > p {
 }
 
 /* 4. Style elements within #app-container (buttons, etc.) */
-#app-container h2,
+
 #app-container button,
 /* Removed #app-container h3 and hr from here, as they are now styled explicitly or within collections-container */
-#collections-container h3, /* This h3 is specifically inside collections-container now */
 #collections-container input,
 #collections-container button {
     flex-shrink: 0; /* These elements should take their natural height */
     margin-bottom: 5px; /* Reduced spacing below them */
+}
+#collections-container h3 {
+    margin-top: 10px; /* Adjust this value to your preference, e.g., 5px or 8px */
+    margin-bottom: 5px; /* Keep consistent with other small margins */
+}
+#app-container h2 {
+    margin-top: 10px; /* Adjust this value to your preference, e.g., 5px or 8px */
+    margin-bottom: 5px; /* Keep consistent with other small margins */
 }
 
 /* Make the map itself flexible and take most space */
@@ -153,7 +160,7 @@ hr {
     white-space: nowrap; /* <-- Prevents text from wrapping within the collection item */
     
     /* Optional: Give collection items a consistent height for alignment */
-    height: 35px; /* Example height */
+    height: 25px; /* Example height */
     line-height: 19px; /* Adjust line-height to vertically center text (height - padding_top - padding_bottom) */
 }
 .collection-item.selected {
