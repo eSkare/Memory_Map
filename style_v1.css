@@ -64,37 +64,44 @@ hr {
     margin: 5px 0; /* Reduced vertical margin for HRs */
 }
 
-/* Collections Container - Make it smaller and control its vertical growth */
+/* Adjustments for the collections container itself */
 #collections-container {
-    flex-grow: 3; /* Collections container takes 3 parts of available flexible space */
-    min-height: 100px; /* Ensure it's not too small on desktop */
-    /* Optional: If you want an absolute cap, use max-height: */
-    /* max-height: 200px; /* Example: Cap its height */
-    
-    display: flex; /* It needs to be a flex container for its own contents */
-    flex-direction: column; /* Stack its children vertically */
-    
-    margin-top: 5px; /* Reduced margin above it */
-    margin-bottom: 0; /* **Crucial: Remove margin at the bottom** */
-    padding: 10px; /* Slightly reduced internal padding */
+    flex-grow: 1; /* Allow collections container to grow and take remaining space */
+    display: flex;
+    flex-direction: column; /* Still a column for its children (h3, list, input, button) */
+    margin-top: 5px;
+    margin-bottom: 0; /* Crucial: No space beneath it */
+    padding: 10px; /* Adjusted padding */
     border: 1px solid #eee;
     border-radius: 8px;
     background-color: #f9f9f9;
     box-sizing: border-box;
-    overflow: hidden; /* Ensure its contents scroll internally if needed */
+
+    /* If you want the ENTIRE collections box to be smaller than default flex-grow: 1,
+       you can add a max-height here for desktop, and adjust in media query for mobile.
+       This will cap its vertical size, forcing map to take more space.
+    */
+    max-height: 180px; /* Example: Adjust this value to make the whole box smaller */
 }
 
 /* collections-list (inside collections-container) */
 #collections-list {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap; /* <-- KEY CHANGE: Forces items into a single horizontal row */
     gap: 10px;
     margin-top: 10px;
-    flex-shrink: 0; /* Important: Don't let it shrink */
-    flex-grow: 1; /* Allow the list itself to grow within collections-container */
-    max-height: 100%; /* This will allow it to fill its parent's height up to 100% */
-    overflow-y: auto; /* Enable vertical scrolling for the list */
-    align-content: flex-start; /* Important for wrapped flex items when height is constrained */
+    flex-shrink: 0; /* Ensure the list itself doesn't shrink vertically */
+    /* REMOVE flex-grow: 1; from here, as it should only take content height, not fill vertical space */
+    
+    height: auto; /* It will take the natural height of its single row of content */
+    /* REMOVE max-height: 100%; as it's no longer wrapping vertically */
+
+    overflow-x: auto; /* <-- KEY CHANGE: Enable horizontal scrolling */
+    overflow-y: hidden; /* <-- KEY CHANGE: Hide vertical overflow */
+    
+    padding-bottom: 5px; /* Add some padding for the horizontal scrollbar on some OSes */
+
+    /* REMOVE align-content: flex-start; as it's for wrapped content */
 }
 
 
@@ -107,16 +114,17 @@ hr {
         padding: 5px;
     }
     #map {
-        flex-grow: 4; /* Map might take slightly less priority, e.g., 60% (4:2 ratio) */
+        flex-grow: 4; /* Map takes less priority, e.g., 60% of flexible space (4:2 ratio) */
         min-height: 150px;
         margin-top: 5px;
         margin-bottom: 5px;
     }
     #collections-container {
-        flex-grow: 2; /* Collections container takes remaining flexible space */
-        min-height: 80px; /* Smaller minimum height for mobile */
+        flex-grow: 0; /* On mobile, give it a fixed height instead of growing */
+        min-height: auto; /* Reset min-height */
+        max-height: 120px; /* Make the whole box smaller on mobile (e.g., about 2 rows of items) */
         margin-top: 5px;
-        padding: 8px; /* Slightly less padding on mobile */
+        padding: 8px;
     }
     #collections-list {
         max-height: 100%; /* Still fills parent */
@@ -130,13 +138,19 @@ hr {
     }
 }
 
-/* Additional styling for collection items */
+/* Ensure individual collection items don't shrink and are consistently sized */
 .collection-item {
+    flex-shrink: 0; /* <-- CRUCIAL: Prevent items from shrinking when forcing horizontal flow */
     background-color: #e0e0e0;
     padding: 8px 12px;
     border-radius: 5px;
     cursor: pointer;
     font-size: 0.9em;
+    white-space: nowrap; /* <-- Prevents text from wrapping within the collection item */
+    
+    /* Optional: Give collection items a consistent height for alignment */
+    height: 35px; /* Example height */
+    line-height: 19px; /* Adjust line-height to vertically center text (height - padding_top - padding_bottom) */
 }
 .collection-item.selected {
     background-color: #007bff;
