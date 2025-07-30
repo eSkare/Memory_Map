@@ -2,13 +2,16 @@
 
 // Web
 import { showDialog } from '/Memory_Map/js/dialog_v1.js';
-import { supabase } from '/Memory_Map/js/script_v3.js'; // Import supabase instance
+import { supabase } from '/Memory_Map/js/supabaseClient_v1.js'; // Import supabase instance 
+import { removeMarkerFromMap } from '/Memory_Map/js/map_v2.js'; 
 
-/* // Local, Liver server
-import { showDialog } from '/js/dialog_v1.js';
-import { supabase } from '/js/script_v3.js'; // Import supabase instance */
 
-console.log("[COLLECTIONS.JS] collections.js loaded successfully.");
+// Local, Liver server
+/* import { showDialog } from '/js/dialog_v1.js';
+import { supabase } from '/js/supabaseClient_v1.js'; // Import supabase instance
+import { removeMarkerFromMap } from '/js/map_v2.js'; */
+
+//console.log("[COLLECTIONS.JS] collections.js loaded successfully.");
 
 const collectionsListContainer = document.getElementById('collections-list');
 
@@ -126,21 +129,20 @@ export async function loadCollectionsForCurrentUser() {
 }
 
 export async function handleCreateCollection(collectionName) {
-    console.log("[COLLECTIONS.JS] handleCreateCollection called! Instance ID:", Math.random());
-
+    //console.log("[COLLECTIONS.JS] handleCreateCollection called! Instance ID:", Math.random());
     if (!collectionName) {
-        alert("Collection name cannot be empty.");
+        showDialog("Missing name", "Collection name cannot be empty.")
         return;
     }
 
     const { data: user } = await supabase.auth.getUser();
     if (!user || !user.user) {
         console.error("[COLLECTIONS.JS] No authenticated user to create collection.");
-        alert("You must be logged in to create a collection.");
+        showDialog("No user", "You must be logged in to create a collection")
         return;
     }
 
-    console.log("[COLLECTIONS.JS] Attempting to create new collection:", collectionName, "for user:", user.user.id);
+    //console.log("[COLLECTIONS.JS] Attempting to create new collection:", collectionName, "for user:", user.user.id);
 
     try {
         const { data, error } = await supabase
@@ -152,13 +154,11 @@ export async function handleCreateCollection(collectionName) {
 
         if (error) {
             console.error("[COLLECTIONS.JS] Error creating collection:", error.message);
-            //alert("Error creating collection: " + error.message);
             showDialog("Error", `Error creating collection: ${error.message}`);
             return;
         }
 
         console.log("[COLLECTIONS.JS] Collection created successfully:", data);
-        //alert(`Collection "${collectionName}" created successfully!`);
         showDialog("Success", `Collection "${collectionName}" created successfully!`);
         
         await loadCollectionsForCurrentUser(); // Reload collections to update the UI and selection
@@ -170,7 +170,51 @@ export async function handleCreateCollection(collectionName) {
 
     } catch (e) {
         console.error("[COLLECTIONS.JS] Uncaught error during collection creation:", e.message);
-        //alert("An unexpected error occurred during collection creation.");
         showDialog("Error", `An unexpected error occurred during collection creation: ${e.message}`);
     }
+}
+
+
+export async function popupDeleteMarker(locationId, marker) {
+    console.log(`[locationHandlers.js] Delete button clicked for location ID: ${locationId}`);
+
+    const confirmed = await showDialog(
+        'Confirm Deletion',
+        'Are you sure you want to delete this marker? This action cannot be undone.',
+        'confirm' // Pass a 'type' argument if your showDialog uses it for styling/behavior
+    );
+
+    if (!confirmed) { // If showDialog resolves to false (user clicked 'Cancel' or equivalent)
+        console.log("Deletion cancelled by user.");
+        return;
+    }
+
+    try {
+        const { error } = await supabase
+            .from('markers') // <-- IMPORTANT: Update this
+            .delete()
+            .eq('id', locationId);
+
+        if (error) {
+            console.error('Supabase Delete Error:', error.message);
+            alert(`Failed to delete location: ${error.message}`);
+            return;
+        }
+
+        console.log(`Marker with ID ${locationId} successfully deleted from database.`);
+        removeMarkerFromMap(marker, locationId)
+        showDialog('Marker deleted successfully.')
+
+    } catch (e) {
+        console.error('An unexpected error occurred during deletion:', e.message);
+        alert(`An unexpected error occurred: ${e.message}`);
+    }
+}
+
+export function popupEditMarker(selected_marker) {
+    console.log(`Edit button clicked for location ID:`, selected_marker);
+}
+
+export function popupViewMarker(selected_marker) {
+    console.log('View Details button clicked for location ID: ', selected_marker);
 }

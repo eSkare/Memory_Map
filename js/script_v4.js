@@ -1,25 +1,19 @@
 // js/script.js - Main application logic
 
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-
 // Web
-import { showDialog } from '/Memory_Map/js/dialog_v1.js'; // Ensure this is the updated dialog.js
-import { initializeMap, setMapClickCallback, clearAllMapMarkers, addMarkerToMap } from '/Memory_Map/js/map_v1.js'; // Import new map functions
-import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection, handleCreateCollection, getSelectedCollectionId, getAllCollections } from '/Memory_Map/js/collections_v2.js'; // Import new getAllCollections
+import { supabase } from '/Memory_Map/js/supabaseClient_v1.js';
+import { showDialog } from '/Memory_Map/js/dialog_v1.js';
+import { initializeMap, setMapClickCallback, clearAllMapMarkers, addMarkerToMap, recenterMap } from '/Memory_Map/js/map_v2.js';
+import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection, handleCreateCollection, getSelectedCollectionId, getAllCollections } from '/Memory_Map/js/collections_v3.js';
 
 
-/* // Local, Live server
-import { showDialog } from '/js/dialog_v1.js'; // Ensure this is the updated dialog.js
-import { initializeMap, setMapClickCallback, clearAllMapMarkers, addMarkerToMap } from '/js/map_v1.js'; // Import new map functions
-import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection, handleCreateCollection, getSelectedCollectionId, getAllCollections } from '/js/collections_v2.js'; */
+// Local, Live server
+/* import { supabase } from '/js/supabaseClient_v1.js';
+import { showDialog } from '/js/dialog_v1.js';
+import { initializeMap, setMapClickCallback, clearAllMapMarkers, addMarkerToMap, recenterMap } from '/js/map_v2.js';
+import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection, handleCreateCollection, getSelectedCollectionId, getAllCollections } from '/js/collections_v3.js'; 
+ */
 
-
-// YOUR PROJECT URL AND ANON KEY - Make sure these are correct for YOUR project
-const SUPABASE_URL = 'https://szcotkwupwrbawgprkbk.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6Y290a3d1cHdyYmF3Z3Bya2JrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzNTEyNDcsImV4cCI6MjA2ODkyNzI0N30.e-cQbi9lt803sGD-SUItopcE6WgmYcxLFgPsGFp32zI';
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY); // Export Supabase client
-console.log("Supabase client created successfully from external script.");
 
 // DOM Elements
 const authContainer = document.getElementById('auth-container');
@@ -115,13 +109,15 @@ export async function loadAndDisplayAllMarkers() {
 
         console.log("[SCRIPT.JS] Markers data received:", markers);
         markers.forEach(markerData => {
-            addMarkerToMap(markerData.latitude, markerData.longitude, markerData.name, markerData.description, markerData.color);
+            //addMarkerToMap(markerData.latitude, markerData.longitude, markerData.name, markerData.description, markerData.color);
+            addMarkerToMap(markerData)
         });
         console.log("[SCRIPT.JS] Finished loading and displaying markers.");
-
+        
     } catch (e) {
         console.error("[SCRIPT.JS] Uncaught error loading markers:", e.message);
     }
+
 }
 
 
@@ -164,7 +160,7 @@ async function handleMapClick(lat, lng) {
     );
 
     if (!markerDetails) { // User cancelled the dialog
-        showDialog("Info", "Marker creation cancelled.");
+        //showDialog("Info", "Marker creation cancelled.");
         return;
     }
 
@@ -314,6 +310,7 @@ async function updateUI(session) {
         resetCollectionSelection();
         clearAllMapMarkers(); // Clear map markers from map on logout
     }
+    recenterMap();
 }
 
 authSubmitBtn.addEventListener('click', async () => {
