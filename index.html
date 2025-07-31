@@ -3,14 +3,13 @@
 <head>
     <title>Memory Map</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Add Leaflet CSS (without integrity for now, as that's what works for you) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous">
 
     <!-- Web -->
-    <link rel="stylesheet" href="/Memory_Map/style_v4.css">
+    <link rel="stylesheet" href="/Memory_Map/style_v5.css">
 
     <!-- Local, Live server -->
-    <!-- <link rel="stylesheet" href="/style_v4.css"> -->
+    <!-- <link rel="stylesheet" href="/style_v5.css"> -->
 </head>
 <body>
     <h1>Memory Map! 🗺️</h1>
@@ -34,7 +33,7 @@
     </div>
 
     <!-- App Container (Visible after login) -->
-    <div id="app-container" style="display: none;">
+    <div id="app-container">
         <h2>Welcome, <span id="usernameSpan"></span>!</h2>
         <button id="logoutBtn">Logout</button>
         <!-- Map Container -->
@@ -56,17 +55,16 @@
 
     <!-- cache-busting, increment the version number after new update and testing. update ALL IMPORTS AND FILE NAMES -->
     <!-- Web -->
-    <script src="/Memory_Map/js/script_v5.js" type="module" defer></script>
+    <script src="/Memory_Map/js/script_v6.js" type="module" defer></script>
     <script src="/Memory_Map/js/dialog_v1.js" type="module" defer></script>
-    <script src="/Memory_Map/js/map_v3.js" type="module" defer></script>
-    <script src="/Memory_Map/js/collections_v4.js" type="module" defer></script>
+    <script src="/Memory_Map/js/map_v4.js" type="module" defer></script>
+    <script src="/Memory_Map/js/collections_v5.js" type="module" defer></script>
 
     <!-- Local, Live server-->
-    <!-- <script src="/js/script_v5.js" type="module" defer></script>
+    <!-- <script src="/js/script_v6.js" type="module" defer></script>
     <script src="/js/dialog_v1.js" type="module" defer></script>
-    <script src="/js/map_v3.js" type="module" defer></script>
-    <script src="/js/collections_v4.js" type="module" defer></script> -->
-
+    <script src="/js/map_v4.js" type="module" defer></script>
+    <script src="/js/collections_v5.js" type="module" defer></script> -->
 
 </body>
 </html>

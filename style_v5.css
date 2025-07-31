@@ -1,0 +1,233 @@
+/* 1. Base setup: Make html and body fill the screen and use flexbox */
+html, body {
+    height: 100%;
+    margin: 0;
+    /* padding: 10px 10px 0 10px;  */
+    /* Top, Right, Bottom (0), Left */
+    padding: 10px 0 0 0;
+    overflow: hidden; /* Prevent main page scrolling; internal scrolling will handle content */
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+/* 2. Style static header elements (h1, p) */
+body > h1,
+body > p {
+    flex-shrink: 0; /* These elements should take their natural height and not shrink */
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 5px; /* Reduced spacing below header */
+}
+
+body {
+    /* Set the background image and its path */
+    background-image: url('img/background.JPG'); 
+    
+    /* Ensure the image covers the entire viewport */
+    background-size: cover; 
+    
+    /* Center the image in the viewport */
+    background-position: center;
+    
+    /* Prevent the image from tiling */
+    background-repeat: no-repeat;
+    
+    /* (Optional) Makes the background fixed while the page content scrolls */
+    background-attachment: fixed;
+}
+
+#auth-container {
+    display: flex;          /* Makes the container a flex container */
+    flex-direction: column; /* Stacks its direct children vertically */
+    gap: 10px;              /* Adds 10px space between each stacked item */
+
+    max-width: 300px;           /* Limit the width of the form */
+    margin: 20px auto;      /* Center the form horizontally on the page */
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background-color: white;
+}
+
+#auth-container input[type="email"],
+#auth-container input[type="password"],
+#auth-container input[type="text"],
+#auth-container button {
+    width: 100%;            /* Make them span the full width of the flex item */
+    padding: 10px;
+    box-sizing: border-box; /* Include padding and border in the element's total width */
+    margin: 0;              /* Remove any default browser margins */
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#app-container {
+    flex-grow: 1; /* These will expand to fill vertical space */
+    display: flex;
+    flex-direction: column; /* Stack their children vertically */
+    overflow: hidden; /* Important: prevents scrollbars here, allowing children to manage their own scroll */
+    box-sizing: border-box;
+    /* Adjust padding here - consider if you need padding at the very bottom inside this container */
+    padding: 10px; /* Keep overall padding, adjust if inner elements need tighter bottom */
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+#app-container button,
+/* Removed #app-container h3 and hr from here, as they are now styled explicitly or within collections-container */
+#collections-container input,
+#collections-container button {
+    flex-shrink: 0; /* These elements should take their natural height */
+    margin-bottom: 5px; /* Reduced spacing below them */
+}
+#collections-container h3 {
+    flex-shrink: 0;
+    margin-top: 5px; /* Adjust this value to your preference, e.g., 5px or 8px */
+    margin-bottom: 5px; /* Keep consistent with other small margins */
+}
+#app-container h2 {
+    flex-shrink: 0;
+    margin-top: 10px; /* Adjust this value to your preference, e.g., 5px or 8px */
+    margin-bottom: 5px; /* Keep consistent with other small margins */
+}
+
+/* Make the map itself flexible and take most space */
+#map {
+    width: 100%;
+    flex-grow: 1;
+    flex-shrink: 1; 
+    min-height: 200px; /* Ensure a minimum usable height for the map */
+    margin-top: 5px;
+    margin-bottom: 5px;
+    border: 1px solid #ccc;
+}
+
+/* Adjustments for the hr elements */
+hr {
+    flex-shrink: 0; /* Ensure hr takes its natural height and doesn't compress */
+    width: 100%;
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 5px 0; /* Reduced vertical margin for HRs */
+}
+
+/* Collections Container - Will take its natural height and NOT scroll vertically */
+#collections-container {
+    flex-grow: 0; 
+    flex-shrink: 0;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    
+    display: flex;
+    flex-direction: column; /* Still a column for its children (h3, list, input, button) */
+    margin-top: 5px;
+    margin-bottom: 0; /* No space beneath it */
+    padding: 10px; /* Adjust internal padding as needed */
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-sizing: border-box;
+    
+    overflow: visible; /* Ensures content is never clipped if it exceeds internal layout */
+}
+
+/* collections-list (inside collections-container) - Still horizontally scrollable */
+#collections-list {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    margin-top: 5px;
+    flex-shrink: 0;
+    height: auto; /* Takes height of its single row */
+    overflow-x: auto; /* Horizontal scrolling for items */
+    overflow-y: hidden; /* No vertical scrolling for this row */
+    padding-bottom: 5px;
+}
+
+
+/* --- Media Queries for Mobile Responsiveness --- */
+@media (max-width: 768px) {
+    body {
+        /* Top, Right, Bottom, Left */
+        padding: 5px 0px 0 0px; /* Less padding on mobile, 0 at bottom */
+    }
+    #app-container, #auth-container {
+        padding: 20px;
+    }
+    #map {
+        flex-grow: 1; /* Still takes all remaining flexible space */
+        min-height: 150px; /* But its minimum can be smaller on mobile */
+        margin-top: 5px;
+        margin-bottom: 5px;
+    }
+    #collections-container {
+        flex-grow: 0; /* Ensure it remains fixed height */
+        flex-shrink: 0; /* Ensure it doesn't shrink */
+        height: auto; /* Height determined by content */
+        max-height: none; /* Override any mobile specific max-height */
+        overflow: visible; /* Ensure no clipping or scrolling on mobile either */
+        margin-top: 5px;
+        padding: 8px;
+    }
+    #collections-list {
+        max-height: 100%; /* Still fills parent */
+    }
+    #profileData { /* If you add this back in the future, consider its mobile sizing */
+        max-height: 80px;
+    }
+    .collection-item {
+        font-size: 0.85em;
+        padding: 4px 6px 1px;
+    }
+}
+
+
+.collection-item {
+    /* Retain your flex-shrink rule */
+    flex-shrink: 0; 
+    position: relative;
+    
+    background-color: #e0e0e0;
+    /* padding: 4px 6px 1px; */
+    padding: 4px 40px 1px 6px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    white-space: nowrap;
+    
+    /* Ensure the text and button fit */
+    height: 25px; 
+    line-height: 19px;
+}
+.collection-item.selected {
+    background-color: #007bff;
+    color: white;
+}
+
+.collection-actions {
+    position: absolute;
+    
+    /* Retain your positioning values */
+    top: 0;
+    right: 0;
+
+    /* Add padding for spacing */
+    padding: 5px;
+}
+
+.collection-options-popup {
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+}
+.collection-options-popup button {
+    font-size: 0.8rem;
+}
