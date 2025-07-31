@@ -1,12 +1,12 @@
 // js/map.js - Updated for marker management and display
 
 //Web
-import { popupDeleteMarker, popupEditMarker, popupViewMarker } from '/Memory_Map/js/collections_v3.js';
+import { popupDeleteMarker, popupEditMarker, popupViewMarker } from '/Memory_Map/js/collections_v4.js';
 
 
 //Local, Live server
-/* import { popupDeleteMarker, popupEditMarker, popupViewMarker } from '/js/collections_v3.js';
- */
+/* import { popupDeleteMarker, popupEditMarker, popupViewMarker } from '/js/collections_v4.js'; */
+
 //console.log("[MAP.JS] map.js loaded successfully.");
 
 let mapInstance = null; // To store the map instance

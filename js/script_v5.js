@@ -3,16 +3,16 @@
 // Web
 import { supabase } from '/Memory_Map/js/supabaseClient_v1.js';
 import { showDialog } from '/Memory_Map/js/dialog_v1.js';
-import { initializeMap, setMapClickCallback, clearAllMapMarkers, addMarkerToMap, recenterMap } from '/Memory_Map/js/map_v2.js';
-import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection, handleCreateCollection, getSelectedCollectionId, getAllCollections } from '/Memory_Map/js/collections_v3.js';
+import { initializeMap, setMapClickCallback, clearAllMapMarkers, addMarkerToMap, recenterMap } from '/Memory_Map/js/map_v3.js';
+import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection, handleCreateCollection, getSelectedCollectionId, getAllCollections } from '/Memory_Map/js/collections_v4.js';
 
 
 // Local, Live server
 /* import { supabase } from '/js/supabaseClient_v1.js';
 import { showDialog } from '/js/dialog_v1.js';
-import { initializeMap, setMapClickCallback, clearAllMapMarkers, addMarkerToMap, recenterMap } from '/js/map_v2.js';
-import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection, handleCreateCollection, getSelectedCollectionId, getAllCollections } from '/js/collections_v3.js'; 
- */
+import { initializeMap, setMapClickCallback, clearAllMapMarkers, addMarkerToMap, recenterMap } from '/js/map_v3.js';
+import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection, handleCreateCollection, getSelectedCollectionId, getAllCollections } from '/js/collections_v4.js';  */
+
 
 
 // DOM Elements

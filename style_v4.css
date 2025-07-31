@@ -170,21 +170,91 @@ hr {
     }
 }
 
-/* Ensure individual collection items don't shrink and are consistently sized */
+/* 
 .collection-item {
-    flex-shrink: 0; /* <-- CRUCIAL: Prevent items from shrinking when forcing horizontal flow */
+    flex-shrink: 0; 
     background-color: #e0e0e0;
     padding: 4px 6px 1px;
     border-radius: 5px;
     cursor: pointer;
     font-size: 0.9em;
-    white-space: nowrap; /* <-- Prevents text from wrapping within the collection item */
-    
-    /* Optional: Give collection items a consistent height for alignment */
-    height: 25px; /* Example height */
-    line-height: 19px; /* Adjust line-height to vertically center text (height - padding_top - padding_bottom) */
+    white-space: nowrap; 
+    height: 25px; 
+    line-height: 19px; 
 }
 .collection-item.selected {
     background-color: #007bff;
     color: white;
+}
+.collection-actions {
+    flex-shrink: 0;
+    top: 0;
+    right: 0;
+}
+.collection-options-popup {
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+}
+.collection-options-popup button {
+    font-size: 0.8rem;
+} 
+ */
+
+ /* Your collection item styles, now with positioning */
+.collection-item {
+    /* Retain your flex-shrink rule */
+    flex-shrink: 0; 
+
+    /* CRUCIAL: Make this the positioning context for the button */
+    position: relative;
+    
+    background-color: #e0e0e0;
+    /* padding: 4px 6px 1px; */
+    padding: 4px 40px 1px 6px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    white-space: nowrap;
+    
+    /* Ensure the text and button fit */
+    height: 25px; 
+    line-height: 19px;
+}
+.collection-item.selected {
+    background-color: #007bff;
+    color: white;
+}
+
+/* Your collection actions styles, now with positioning */
+.collection-actions {
+    /* CRUCIAL: Take this element out of the normal flow */
+    position: absolute;
+    
+    /* Retain your positioning values */
+    top: 0;
+    right: 0;
+
+    /* Add padding for spacing */
+    padding: 5px;
+
+    /* NOTE: flex-shrink is no longer needed here since it's absolutely positioned */
+}
+
+/* Your popup styles */
+.collection-options-popup {
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+}
+.collection-options-popup button {
+    font-size: 0.8rem;
 }

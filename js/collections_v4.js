@@ -3,13 +3,13 @@
 // Web
 import { showDialog } from '/Memory_Map/js/dialog_v1.js';
 import { supabase } from '/Memory_Map/js/supabaseClient_v1.js'; // Import supabase instance 
-import { removeMarkerFromMap } from '/Memory_Map/js/map_v2.js'; 
+import { removeMarkerFromMap } from '/Memory_Map/js/map_v3.js'; 
 
 
 // Local, Liver server
 /* import { showDialog } from '/js/dialog_v1.js';
 import { supabase } from '/js/supabaseClient_v1.js'; // Import supabase instance
-import { removeMarkerFromMap } from '/js/map_v2.js'; */
+import { removeMarkerFromMap } from '/js/map_v3.js'; */
 
 //console.log("[COLLECTIONS.JS] collections.js loaded successfully.");
 
@@ -41,12 +41,30 @@ export function renderCollections(collections) {
     collections.forEach(collection => {
         const div = document.createElement('div');
         div.classList.add('collection-item');
-        div.textContent = collection.name;
+        //div.textContent = collection.name;
         div.dataset.id = collection.id;
 
         if (collection.id === selectedCollectionId) {
             div.classList.add('selected');
         }
+
+        // Create the name span
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = collection.name;
+        div.appendChild(nameSpan);
+
+        // Create a container for action buttons (the popup trigger)
+        const actionsContainer = document.createElement('div');
+        actionsContainer.classList.add('collection-actions');
+        
+        // Add the 'options' button (e.g., a kebab menu icon)
+        const optionsButton = document.createElement('button');
+        optionsButton.classList.add('btn', 'btn-sm', 'btn-secondary', 'collection-options-btn');
+        optionsButton.textContent = '...'; // Or an icon like &#8942;
+        optionsButton.dataset.collectionId = collection.id;
+        actionsContainer.appendChild(optionsButton);
+
+        div.appendChild(actionsContainer);
 
         div.addEventListener('click', () => {
             // Toggle selection
@@ -64,8 +82,17 @@ export function renderCollections(collections) {
                 div.classList.add('selected');
                 console.log("[COLLECTIONS.JS] Collection selected:", collection.name);
             }
-            // TODO (Future): Trigger re-rendering markers for this selected collection (if filtering by collection is implemented)
         });
+
+        // Listener for the options button click (opens the popup)
+        optionsButton.addEventListener('click', (event) => {
+            // STOP the click from bubbling up to the parent div
+            // This prevents the collection from being selected/deselected
+            event.stopPropagation();
+
+            showCollectionOptionsPopup(collection.id, event.target);
+        });
+
         collectionsListContainer.appendChild(div);
     });
 }
@@ -217,4 +244,65 @@ export function popupEditMarker(selected_marker) {
 
 export function popupViewMarker(selected_marker) {
     console.log('View Details button clicked for location ID: ', selected_marker);
+}
+
+
+function showCollectionOptionsPopup(collectionId, targetButton) {
+    const existingPopup = document.querySelector('.collection-options-popup');
+    if (existingPopup) {
+        existingPopup.remove();
+    }
+
+    const popupDiv = document.createElement('div');
+    popupDiv.classList.add('collection-options-popup');
+    popupDiv.style.position = 'absolute';
+    popupDiv.style.zIndex = 1000;
+    
+    const rect = targetButton.getBoundingClientRect();
+    const popupHeight = popupDiv.offsetHeight;
+    const popupWidth = popupDiv.offsetWidth;
+    popupDiv.style.top = `${rect.top + window.scrollY - popupHeight - 5}px`;
+    popupDiv.style.left = `${rect.left + window.scrollX + rect.width - popupWidth}px`;
+    
+
+    popupDiv.innerHTML = `
+        <button class="btn btn-sm btn-info w-100 mb-1" data-action="view">View</button>
+        <button class="btn btn-sm btn-warning w-100 mb-1" data-action="edit">Edit</button>
+        <button class="btn btn-sm btn-danger w-100" data-action="delete">Delete</button>
+    `;
+
+    document.body.appendChild(popupDiv);
+
+    // Add event listener to handle button clicks inside the popup
+    popupDiv.addEventListener('click', (event) => {
+        const action = event.target.dataset.action;
+        if (action) {
+            switch(action) {
+                case 'view': popupViewCollection(collectionId); break;
+                case 'edit': popupEditCollection(collectionId); break;
+                case 'delete': popupDeleteCollection(collectionId); break;
+            }
+            popupDiv.remove(); // Hide the popup after an action is selected
+        }
+    });
+
+    // Hide the popup if the user clicks anywhere else
+    document.addEventListener('click', function closePopup(event) {
+        if (!popupDiv.contains(event.target) && event.target !== targetButton) {
+            popupDiv.remove();
+            document.removeEventListener('click', closePopup);
+        }
+    });
+}
+
+function popupViewCollection(collectionId) {
+    console.log(`[COLLECTIONS.JS] View collection with ID: ${collectionId}`);
+}
+
+function popupEditCollection(collectionId) {
+    console.log(`[COLLECTIONS.JS] Edit collection with ID: ${collectionId}`);
+}
+
+function popupDeleteCollection(collectionId) {
+    console.log(`[COLLECTIONS.JS] Delete collection with ID: ${collectionId}`);
 }
