@@ -156,7 +156,7 @@ export function addMarkerToMap(markerData) {
     return marker;
 }
 
-export function recenterMap(){
+/* export function recenterMap(){
     if (mapInstance) {
         mapInstance.setView([60.3913, 5.3221], 11); 
         setTimeout(() => {
@@ -166,7 +166,7 @@ export function recenterMap(){
     } else {
         console.error("Map instance not available to set view after login.");
     }
-}
+} */
 
 //Only map, not database
 export function removeMarkerFromMap(marker, locationId){
@@ -207,6 +207,15 @@ export function showUserLocationOnMap() {
             },
             // Error Callback: this function runs if the user denies permission or an error occurs
             (error) => {
+                if (mapInstance) {
+                    mapInstance.setView([60.3913, 5.3221], 11); 
+                    setTimeout(() => {
+                        mapInstance.invalidateSize();
+                    }, 300); // 300ms delay for a typical CSS transition
+                    console.log("Map re-centered to fixed location after user login.");
+                } else {
+                    console.error("Map instance not available to set view after login.");
+                }
                 console.error("[MAP.JS] Geolocation error:", error.message);
                 console.error(`[MAP.JS] Geolocation error (${error.code}): ${error.message}`);
                 // You can also log the entire error object for more detail
@@ -231,5 +240,14 @@ export function showUserLocationOnMap() {
         // Geolocation is not supported in this browser
         alert("Geolocation is not supported by your browser.");
         console.error("[MAP.JS] Geolocation API not supported.");
+        if (mapInstance) {
+            mapInstance.setView([60.3913, 5.3221], 11); 
+            setTimeout(() => {
+                mapInstance.invalidateSize();
+            }, 300); // 300ms delay for a typical CSS transition
+            console.log("Map re-centered to fixed location after user login.");
+        } else {
+            console.error("Map instance not available to set view after login.");
+        }
     }
 }
