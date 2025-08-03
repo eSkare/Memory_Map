@@ -3,17 +3,17 @@
 // Web
 import { supabase } from '/Memory_Map/js/supabaseClient_v1.js';
 import { showDialog } from '/Memory_Map/js/dialog_v1.js';
-import { initializeMap, setMapClickCallback, clearAllMapMarkers, addMarkerToMap, recenterMap } from '/Memory_Map/js/map_v4.js';
+import { initializeMap, setMapClickCallback, clearAllMapMarkers, addMarkerToMap, recenterMap, showUserLocationOnMap } from '/Memory_Map/js/map_v4.js';
 import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection, handleCreateCollection, getSelectedCollectionId, getAllCollections } from '/Memory_Map/js/collections_v5.js';
 
 
 // Local, Live server
 /* import { supabase } from '/js/supabaseClient_v1.js';
 import { showDialog } from '/js/dialog_v1.js';
-import { initializeMap, setMapClickCallback, clearAllMapMarkers, addMarkerToMap, recenterMap } from '/js/map_v4.js';
+import { initializeMap, setMapClickCallback, clearAllMapMarkers, addMarkerToMap, recenterMap, showUserLocationOnMap } from '/js/map_v4.js';
 import { loadCollectionsForCurrentUser, clearCollectionsUI, resetCollectionSelection, handleCreateCollection, getSelectedCollectionId, getAllCollections } from '/js/collections_v5.js';  
- */
 
+ */
 
 // DOM Elements
 const authContainer = document.getElementById('auth-container');
@@ -311,6 +311,7 @@ async function updateUI(session) {
         clearAllMapMarkers(); // Clear map markers from map on logout
     }
     recenterMap();
+    showUserLocationOnMap();
 }
 
 authSubmitBtn.addEventListener('click', async () => {

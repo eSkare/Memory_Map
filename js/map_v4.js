@@ -10,6 +10,8 @@ import { popupDeleteMarker, popupEditMarker, popupViewMarker } from '/Memory_Map
 let mapInstance = null; // To store the map instance
 let mapClickCallback = null; // To store the callback for map clicks
 let currentMapMarkers = []; // Array to keep track of Leaflet markers
+let userLocationMarker = null; // A variable to hold the marker, so we can update or remove it later
+
 
 // Export function to set the map click callback
 export function setMapClickCallback(callback) {
@@ -174,5 +176,60 @@ export function removeMarkerFromMap(marker, locationId){
     }
     if (currentMapMarkers && Array.isArray(currentMapMarkers)) {
         currentMapMarkers = currentMapMarkers.filter(m => m._leaflet_id !== marker._leaflet_id);
+    }
+}
+
+export function showUserLocationOnMap() {
+    // Check if the browser supports the Geolocation API
+    if ("geolocation" in navigator) {
+        // Request the user's current position
+        navigator.geolocation.getCurrentPosition(
+            // Success Callback: this function runs if the user grants permission
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                const userLatLng = [latitude, longitude];
+
+                console.log(`[MAP.JS] User location found at: Lat ${latitude}, Lng ${longitude}`);
+                
+                // Clear any previous user location marker
+                if (userLocationMarker) {
+                    mapInstance.removeLayer(userLocationMarker);
+                }
+
+                // Create a new marker for the user's location
+                userLocationMarker = L.marker(userLatLng)
+                    .addTo(mapInstance)
+                    .bindPopup("You are here!")
+                    .openPopup();
+                
+                // Center the map view on the user's location with a zoom level
+                mapInstance.setView(userLatLng, 15); // Zoom level 15 is a good default
+            },
+            // Error Callback: this function runs if the user denies permission or an error occurs
+            (error) => {
+                console.error("[MAP.JS] Geolocation error:", error.message);
+                console.error(`[MAP.JS] Geolocation error (${error.code}): ${error.message}`);
+                // You can also log the entire error object for more detail
+                console.error("Full error object:", error);
+                
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        alert("Permission to get your location was denied.");
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        alert("Your location information is unavailable.");
+                        break;
+                    case error.TIMEOUT:
+                        alert("The request to get your location timed out.");
+                        break;
+                    default:
+                        alert("An unknown error occurred while getting your location.");
+                }
+            }
+        );
+    } else {
+        // Geolocation is not supported in this browser
+        alert("Geolocation is not supported by your browser.");
+        console.error("[MAP.JS] Geolocation API not supported.");
     }
 }
