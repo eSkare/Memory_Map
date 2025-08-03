@@ -231,3 +231,16 @@ hr {
 .collection-options-popup button {
     font-size: 0.8rem;
 }
+
+#user-location-loading {
+    /* Optional: Basic styling for the message */
+    font-style: italic;
+    color: #555;
+    margin-top: 10px;
+    text-align: center;
+}
+
+/* This class is what we will toggle to show/hide the message */
+.hidden {
+    display: none;
+}

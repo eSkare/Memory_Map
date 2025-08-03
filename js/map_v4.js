@@ -11,6 +11,7 @@ let mapInstance = null; // To store the map instance
 let mapClickCallback = null; // To store the callback for map clicks
 let currentMapMarkers = []; // Array to keep track of Leaflet markers
 let userLocationMarker = null; // A variable to hold the marker, so we can update or remove it later
+const userLocationLoadingIndicator = document.getElementById('user-location-loading');
 
 
 // Export function to set the map click callback
@@ -180,12 +181,18 @@ export function removeMarkerFromMap(marker, locationId){
 }
 
 export function showUserLocationOnMap() {
+    if (userLocationLoadingIndicator) {
+        userLocationLoadingIndicator.classList.remove('hidden');
+    }
     // Check if the browser supports the Geolocation API
     if ("geolocation" in navigator) {
         // Request the user's current position
         navigator.geolocation.getCurrentPosition(
             // Success Callback: this function runs if the user grants permission
             (position) => {
+                if (userLocationLoadingIndicator) {
+                    userLocationLoadingIndicator.classList.add('hidden');
+                }
                 const { latitude, longitude } = position.coords;
                 const userLatLng = [latitude, longitude];
 
@@ -207,6 +214,9 @@ export function showUserLocationOnMap() {
             },
             // Error Callback: this function runs if the user denies permission or an error occurs
             (error) => {
+                if (userLocationLoadingIndicator) {
+                    userLocationLoadingIndicator.classList.add('hidden');
+                }
                 if (mapInstance) {
                     mapInstance.setView([60.3913, 5.3221], 11); 
                     setTimeout(() => {
@@ -237,6 +247,9 @@ export function showUserLocationOnMap() {
             }
         );
     } else {
+        if (userLocationLoadingIndicator) {
+            userLocationLoadingIndicator.classList.add('hidden');
+        }
         // Geolocation is not supported in this browser
         alert("Geolocation is not supported by your browser.");
         console.error("[MAP.JS] Geolocation API not supported.");
