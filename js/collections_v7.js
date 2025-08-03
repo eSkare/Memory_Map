@@ -3,13 +3,13 @@
 // Web
 import { showDialog } from '/Memory_Map/js/dialog_v1.js';
 import { supabase } from '/Memory_Map/js/supabaseClient_v1.js'; // Import supabase instance 
-import { removeMarkerFromMap } from '/Memory_Map/js/map_v4.js'; 
+import { removeMarkerFromMap } from '/Memory_Map/js/map_v7.js'; 
 
 
 // Local, Liver server
 /* import { showDialog } from '/js/dialog_v1.js';
 import { supabase } from '/js/supabaseClient_v1.js'; // Import supabase instance
-import { removeMarkerFromMap } from '/js/map_v4.js'; */
+import { removeMarkerFromMap } from '/js/map_v7.js'; */
 
 //console.log("[COLLECTIONS.JS] collections.js loaded successfully.");
 

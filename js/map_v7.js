@@ -1,10 +1,12 @@
 // js/map.js - Updated for marker management and display
 
 //Web
-import { popupDeleteMarker, popupEditMarker, popupViewMarker } from '/Memory_Map/js/collections_v5.js';
+import { popupDeleteMarker, popupEditMarker, popupViewMarker } from '/Memory_Map/js/collections_v7.js';
+import { showDialog } from '/Memory_Map/js/dialog_v1.js';
 
 //Local, Live server
-//import { popupDeleteMarker, popupEditMarker, popupViewMarker } from '/js/collections_v5.js';
+//import { popupDeleteMarker, popupEditMarker, popupViewMarker } from '/js/collections_v7.js';
+//import { showDialog } from '/js/dialog_v1.js';
 
 
 let mapInstance = null; // To store the map instance
@@ -184,11 +186,9 @@ export function showUserLocationOnMap() {
     if (userLocationLoadingIndicator) {
         userLocationLoadingIndicator.classList.remove('hidden');
     }
-    // Check if the browser supports the Geolocation API
+
     if ("geolocation" in navigator) {
-        // Request the user's current position
         navigator.geolocation.getCurrentPosition(
-            // Success Callback: this function runs if the user grants permission
             (position) => {
                 if (userLocationLoadingIndicator) {
                     userLocationLoadingIndicator.classList.add('hidden');
@@ -226,23 +226,19 @@ export function showUserLocationOnMap() {
                 } else {
                     console.error("Map instance not available to set view after login.");
                 }
-                console.error("[MAP.JS] Geolocation error:", error.message);
-                console.error(`[MAP.JS] Geolocation error (${error.code}): ${error.message}`);
-                // You can also log the entire error object for more detail
-                console.error("Full error object:", error);
                 
                 switch(error.code) {
                     case error.PERMISSION_DENIED:
-                        alert("Permission to get your location was denied.");
+                        showDialog("Permission denied", "Permission to get your location was denied.");
                         break;
                     case error.POSITION_UNAVAILABLE:
-                        alert("Your location information is unavailable.");
+                        showDialog("Location unavalible", "Your location information is unavailable.");
                         break;
                     case error.TIMEOUT:
-                        alert("The request to get your location timed out.");
+                        showDialog("Timed out", "The request to get your location timed out.");
                         break;
                     default:
-                        alert("An unknown error occurred while getting your location.");
+                        showDialog("Unknown error", "An unknown error occurred while getting your location.");
                 }
             }
         );
@@ -250,8 +246,7 @@ export function showUserLocationOnMap() {
         if (userLocationLoadingIndicator) {
             userLocationLoadingIndicator.classList.add('hidden');
         }
-        // Geolocation is not supported in this browser
-        alert("Geolocation is not supported by your browser.");
+        showDialog("No support", "Geolocation is not supported by your browser.");
         console.error("[MAP.JS] Geolocation API not supported.");
         if (mapInstance) {
             mapInstance.setView([60.3913, 5.3221], 11); 
